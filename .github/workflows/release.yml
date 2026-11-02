@@ -54,13 +54,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
-        run: gh release create "$TAG" out/vsix.dest/*.vsix --title "Socle for VS Code ${TAG#v}" --notes-file notes.md
+        run: |
+          # A rerun after a failed registry step finds the release already made.
+          if gh release view "$TAG" >/dev/null 2>&1; then echo "release $TAG exists"; exit 0; fi
+          gh release create "$TAG" out/vsix.dest/*.vsix --title "Socle for VS Code ${TAG#v}" --notes-file notes.md
 
-      # Trusted publishing (vsce 4.0+): vsce exchanges the job's OIDC token for a
-      # 15-minute Marketplace credential; it never falls back to a token.
+      # Trusted publishing: vsce exchanges the job's OIDC token for a 15-minute
+      # Marketplace credential; it never falls back to a token. 4.1.0 is the
+      # first vsce whose exchange the Marketplace accepts (4.0.0 sent no api-version).
       - name: Publish on the Visual Studio Marketplace
         if: github.ref_type == 'tag'
-        run: npx --yes @vscode/vsce@4.0.0 publish --oidc --packagePath out/vsix.dest/*.vsix
+        run: npx --yes @vscode/vsce@4.1.0 publish --oidc --packagePath out/vsix.dest/*.vsix
 
       # Trusted publishing (ovsx 1.2+): the OIDC token is exchanged for a
       # short-lived Open VSX publishing token.
