@@ -1,4 +1,4 @@
-// Drives the SoCLess webview of the e2e VS Code over the Chrome DevTools Protocol.
+// Drives the Socle webview of the e2e VS Code over the Chrome DevTools Protocol.
 //
 //   node webview-click.mjs <runDir> <cdpPort>
 //
@@ -16,7 +16,7 @@
 // state-request.json, and the driver checks all three survived (no iframe reload) in state-result.json.
 // Then index.js switches the VS Code theme and writes <runDir>/theme-request.json ({theme}); the driver
 // waits for the UI's data-theme to follow and writes <runDir>/theme-result.json.
-// Last, the wave phase: index.js sets socless.waveViewer = surfer-panel and simulates GCD, which opens
+// Last, the wave phase: index.js sets socle.waveViewer = surfer-panel and simulates GCD, which opens
 // Surfer in its own editor tab (a second webview, its UI frame at ?view=surfer). index.js then writes
 // numbered requests <runDir>/wave-request-<n>.json ({op, ...}) and the driver answers each in
 // wave-result-<n>.json: `surfer` (the panel's Waveform tab is the remote one, the tab's Surfer is
@@ -334,14 +334,14 @@ async function main() {
   result = { ok: false };
   stage = 'prepare the UI state';
   await evaluate(uiConn, `(() => {
-    window.__soclessKeep = 1;
+    window.__socleKeep = 1;
     document.querySelector('[data-toggle-pane="bottom"]').click();
     return true;
   })()`);
   const crumb = () => evaluate(uiConn, `(() => { const a = document.querySelector('.scl-crumb.active'); return a && a.textContent; })()`);
   const state = async () => ({
     ...(await evaluate(uiConn, `({
-      marker: window.__soclessKeep === 1,
+      marker: window.__socleKeep === 1,
       bottomPanel: !!document.querySelector('[data-bottom-panel]'),
     })`)),
     drilled: (await crumb()) === req.inst,
@@ -388,13 +388,13 @@ async function main() {
   });
   finish({ ok: true, message: `UI data-theme is now ${treq.theme}` });
 
-  // Wave phase: index.js set socless.waveViewer = surfer-panel and simulated GCD, so the panel's UI
+  // Wave phase: index.js set socle.waveViewer = surfer-panel and simulated GCD, so the panel's UI
   // drives Surfer in its own editor tab. Each numbered request is one op (see the header).
   const surferIds = new Set(); // the Surfer tab's UI frames seen
   const panelIds = new Set([ui.id]);
   let kept = null; // the Surfer frame marked by the last `surfer` op: {id, loadedTrace}
   const status = (c) => evaluate(c, `(() => { const e = document.querySelector('[data-surfer-status]'); return e && e.getAttribute('data-surfer-status'); })()`);
-  const snapOf = (c) => evaluate(c, `window.__soclessWave ? window.__soclessWave.snapshot() : null`);
+  const snapOf = (c) => evaluate(c, `window.__socleWave ? window.__socleWave.snapshot() : null`);
   const P = (prefix, leaf) => `${prefix}.${leaf}`;
   const plan = (prefix) => ['group io', 'group io.in', P(prefix, 'io_in_valid'), P(prefix, 'io_in_ready'), 'group io.in.bits',
     P(prefix, 'io_in_bits_a'), P(prefix, 'io_in_bits_b'), 'group io.out', P(prefix, 'io_out_valid'), P(prefix, 'io_out_ready'),
@@ -457,7 +457,7 @@ async function main() {
         const pane = document.querySelector('[data-wave-pane]');
         if (tab && (!pane || pane.style.display === 'none')) tab.click();
         const btn = document.querySelector('[data-show-surfer]');
-        const s = window.__soclessWave && window.__soclessWave.snapshot();
+        const s = window.__socleWave && window.__socleWave.snapshot();
         return pane && pane.style.display !== 'none' && btn && btn.offsetParent !== null && s
           ? { surferPane: !!document.querySelector('[data-surfer-pane]'), remote: s.remote === true, button: btn.textContent } : null;
       })()`), 500);
@@ -478,7 +478,7 @@ async function main() {
         const s = await snapOf(sf.c);
         return s && s.idle && s.shown && s.shown.path === '["GCD"]' && s.loadedTrace.endsWith(w.trace) && s;
       });
-      const items = await evaluate(sf.c, `window.__soclessWave.items()`);
+      const items = await evaluate(sf.c, `window.__socleWave.items()`);
       const got = items.map((i) => (i.type === 'Group' ? `group ${i.name}` : i.trace || `? ${i.name}`));
       result.items = got;
       if (JSON.stringify(got) !== JSON.stringify(plan(w.prefix))) {
@@ -491,7 +491,7 @@ async function main() {
         return p && p.status === 'ready' && p;
       });
 
-      await evaluate(sf.c, `(window.__soclessKeep = 1, true)`);
+      await evaluate(sf.c, `(window.__socleKeep = 1, true)`);
       kept = { id: sf.t.id, loadedTrace: s.loadedTrace };
       if (w.shot !== undefined) {
         stage = 'screenshots';
@@ -503,13 +503,13 @@ async function main() {
         `panel frame ${pf.t.id.slice(0, 8)}: remote pane (status ${mirrored.status}, "${remote.button}"), no [data-surfer-pane]`;
     },
 
-    // A selection in the panel (its __soclessWave.select) focuses its signal in the Surfer tab.
+    // A selection in the panel (its __socleWave.select) focuses its signal in the Surfer tab.
     select: async (w) => {
       stage = 'a panel selection focuses its signal in the tab';
       const pf = await frameOf('panel');
       const sf = await frameOf('surfer');
       const focus0 = (await snapOf(sf.c)).focusCount;
-      await evaluate(pf.c, `window.__soclessWave.select('io.out.bits.result')`);
+      await evaluate(pf.c, `window.__socleWave.select('io.out.bits.result')`);
       const focused = await until('the focus of io.out.bits.result in the Surfer tab', 20000, async () => {
         const s = await snapOf(sf.c);
         return s && s.idle && s.focusCount > focus0 && s.lastFocus && s;
@@ -531,7 +531,7 @@ async function main() {
       stage = 'the Surfer tab did not reload';
       const sf = await frameOf('surfer');
       const s = await snapOf(sf.c);
-      const marker = await evaluate(sf.c, `window.__soclessKeep === 1`);
+      const marker = await evaluate(sf.c, `window.__socleKeep === 1`);
       const now = { id: sf.t.id, marker, boots: s && s.boots, status: s && s.status, loadedTrace: s && s.loadedTrace, shown: !!(s && s.shown) };
       result.keep = now;
       if (!kept || now.id !== kept.id || !now.marker || now.boots !== 1 || now.status !== 'ready' || now.loadedTrace !== kept.loadedTrace || !now.shown) {

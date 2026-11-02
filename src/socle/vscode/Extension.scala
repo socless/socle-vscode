@@ -1,16 +1,16 @@
-package socless.vscode
+package socle.vscode
 
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 import scala.scalajs.js.annotation.JSExportTopLevel
 import scala.scalajs.js.timers.{clearTimeout, setTimeout, SetTimeoutHandle}
-import socless.vscode.facade._
+import socle.vscode.facade._
 
 /** The extension entry points VS Code calls. Decisions live in `Logic`; this only wires vscode. */
 object Extension {
   private var client: Option[LanguageClient] = None
 
-  /** Why the server was not started (Java missing or too old), for `socless.showPanel`. */
+  /** Why the server was not started (Java missing or too old), for `socle.showPanel`. */
   private var javaProblem: Option[String] = None
 
   /** Set by `deactivate`, so a late `java -version` answer does not start a client. */
@@ -18,15 +18,15 @@ object Extension {
 
   @JSExportTopLevel("activate")
   def activate(ctx: ExtensionContext): Unit = {
-    ctx.subscriptions.push(commands.registerCommand("socless.showPanel", (() => showPanel()): js.Function0[Unit]))
-    ctx.subscriptions.push(commands.registerCommand("socless.showWaves", (() => showWaves()): js.Function0[Unit]))
+    ctx.subscriptions.push(commands.registerCommand("socle.showPanel", (() => showPanel()): js.Function0[Unit]))
+    ctx.subscriptions.push(commands.registerCommand("socle.showWaves", (() => showWaves()): js.Function0[Unit]))
     ctx.subscriptions.push(
-      commands.registerCommand("socless._panelUrl", (() => Panel.lastUrl.orUndefined): js.Function0[js.UndefOr[String]])
+      commands.registerCommand("socle._panelUrl", (() => Panel.lastUrl.orUndefined): js.Function0[js.UndefOr[String]])
     )
     // The side panel's views exist at once; their tests come with the language server.
     Sidebar.register(ctx)
 
-    val config  = workspace.getConfiguration("socless")
+    val config  = workspace.getConfiguration("socle")
     val javaCmd = Logic.javaCommand(
       config.get[String]("javaPath").toOption,
       js.Dynamic.global.process.env.JAVA_HOME.asInstanceOf[js.UndefOr[String]].toOption,
@@ -86,7 +86,7 @@ object Extension {
         if (restarts.allow(js.Date.now())) js.Dynamic.literal(action = CloseAction.Restart)
         else {
           window.showErrorMessage(
-            "The SoCLess language server stopped 3 times in 3 minutes and will not be restarted. Reload the window to try again."
+            "The Socle language server stopped 3 times in 3 minutes and will not be restarted. Reload the window to try again."
           )
           js.Dynamic.literal(action = CloseAction.DoNotRestart, handled = true)
         }
@@ -98,15 +98,15 @@ object Extension {
       }))
       override val initializationOptions = js.defined(init: js.Any)
       override val errorHandler          = js.defined(handler)
-      // later changes of the socless.* settings reach the server (waveFlag, surferCommand)
-      override val synchronize = js.defined(js.Dynamic.literal(configurationSection = "socless"))
+      // later changes of the socle.* settings reach the server (waveFlag, surferCommand)
+      override val synchronize = js.defined(js.Dynamic.literal(configurationSection = "socle"))
     }
-    val c = new LanguageClient("socless", "SoCLess", new ServerOptions { val run = exe; val debug = exe }, options)
+    val c = new LanguageClient("socle", "Socle", new ServerOptions { val run = exe; val debug = exe }, options)
     client = Some(c)
     Sidebar.attach(c, ctx)
 
     ctx.subscriptions.push(
-      c.onNotification("socless/openPanel", (params: js.Dynamic) =>
+      c.onNotification("socle/openPanel", (params: js.Dynamic) =>
         ignoreFailure(Panel.show(params.url.asInstanceOf[String], params.test.asInstanceOf[js.UndefOr[String]].toOption.flatMap(Option(_)))))
     )
 
@@ -119,7 +119,7 @@ object Extension {
       val doc = e.textEditor.document
       if (doc.languageId == "scala" && doc.uri.scheme == "file" && e.selections.nonEmpty) {
         val params = Logic.cursorParams(doc.uri.toString(), e.selections(0).active.line)
-        debounce(() => ignoreFailure(c.sendNotification("socless/cursor", params)))
+        debounce(() => ignoreFailure(c.sendNotification("socle/cursor", params)))
       }
     })
 
@@ -130,10 +130,10 @@ object Extension {
   private def ignoreFailure(p: js.Promise[Unit]): Unit =
     p.asInstanceOf[js.Dynamic].`catch`((_: js.Any) => ())
 
-  /** `socless.showWaves`: reveals the SoCLess panel (or reopens it on its last view), whose UI drives
+  /** `socle.showWaves`: reveals the Socle panel (or reopens it on its last view), whose UI drives
     * the Surfer tab, then opens or reveals that tab. Only once a Simulate gave the panel a trace. */
   private def showWaves(): Unit = {
-    val viewer = workspace.getConfiguration("socless").get[String]("waveViewer").toOption
+    val viewer = workspace.getConfiguration("socle").get[String]("waveViewer").toOption
     (Logic.showWavesProblem(viewer, SurferTab.traced && Panel.lastUrl.isDefined), Panel.lastUrl) match {
       case (None, Some(url)) =>
         // After the panel exists, so the tab opens in the column after the panel's. None keeps the
@@ -149,7 +149,7 @@ object Extension {
     case None =>
       javaProblem match {
         case Some(problem) => window.showErrorMessage(problem)
-        case None          => window.showInformationMessage("SoCLess: no design yet. Use a \"View design\" lens on a ChiselSim test first.")
+        case None          => window.showInformationMessage("Socle: no design yet. Use a \"View design\" lens on a ChiselSim test first.")
       }
   }
 }

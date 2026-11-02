@@ -1,4 +1,4 @@
-package socless.vscode
+package socle.vscode
 
 import scala.scalajs.js
 import utest._
@@ -33,13 +33,13 @@ object LogicTest extends TestSuite {
         assert(Logic.serverJar(Some("/x/lsp.jar"), "/ext") == "/x/lsp.jar")
       }
       test("blank setting uses the bundled jar") {
-        assert(Logic.serverJar(Some(" "), "/ext") == "/ext/server/socless-lsp.jar")
+        assert(Logic.serverJar(Some(" "), "/ext") == "/ext/server/socle-lsp.jar")
       }
       test("default") {
-        assert(Logic.serverJar(None, "/ext") == "/ext/server/socless-lsp.jar")
+        assert(Logic.serverJar(None, "/ext") == "/ext/server/socle-lsp.jar")
       }
       test("null setting uses the bundled jar") {
-        assert(Logic.serverJar(Some(null), "/ext") == "/ext/server/socless-lsp.jar")
+        assert(Logic.serverJar(Some(null), "/ext") == "/ext/server/socle-lsp.jar")
       }
     }
 
@@ -68,8 +68,8 @@ object LogicTest extends TestSuite {
     }
 
     test("serverArgs: an IPv4-only stack, so WSL relays the panel's loopback port to Windows") {
-      assert(Logic.serverArgs("/ext/server/socless-lsp.jar") ==
-        Seq("-Djava.net.preferIPv4Stack=true", "-jar", "/ext/server/socless-lsp.jar"))
+      assert(Logic.serverArgs("/ext/server/socle-lsp.jar") ==
+        Seq("-Djava.net.preferIPv4Stack=true", "-jar", "/ext/server/socle-lsp.jar"))
     }
 
     test("initializationOptions") {
@@ -108,8 +108,8 @@ object LogicTest extends TestSuite {
         val scripts = "<script".r.findAllMatchIn(h).size
         assert(scripts == 1, h.contains("""<script nonce="N0nce">"""))
         assert(h.contains("MutationObserver"), h.contains("vscode-high-contrast"), h.contains("vscode-dark"))
-        assert(h.contains("socless-theme"))
-        assert(h.contains("""postMessage({ type: 'socless-theme', kind: k }, "http://127.0.0.1:41234")"""))
+        assert(h.contains("socle-theme"))
+        assert(h.contains("""postMessage({ type: 'socle-theme', kind: k }, "http://127.0.0.1:41234")"""))
       }
       test("side panel relay: state up from the frame, navigate down to it") {
         val h      = Logic.webviewHtml("http://127.0.0.1:41234/?host=vscode", "vscode-webview://abc", "N0nce")
@@ -132,28 +132,28 @@ object LogicTest extends TestSuite {
         assert(onMessage != null)
         def event(source: js.Any, origin: String, data: js.Any): Unit =
           onMessage(js.Dynamic.literal(source = source, origin = origin, data = data))
-        val state = js.Dynamic.literal(`type` = "socless-state", path = js.Array("Top"))
+        val state = js.Dynamic.literal(`type` = "socle-state", path = js.Array("Top"))
         event(frameWin, "http://127.0.0.1:41234", state)
         assert(toHost.length == 1, toHost(0) eq state.asInstanceOf[js.Any])
         // from the frame but another origin, or not a state: dropped
         event(frameWin, "http://evil.example", state)
-        event(frameWin, "http://127.0.0.1:41234", js.Dynamic.literal(`type` = "socless-navigate", path = js.Array("Top")))
-        event(frameWin, "http://127.0.0.1:41234", "socless-state")
+        event(frameWin, "http://127.0.0.1:41234", js.Dynamic.literal(`type` = "socle-navigate", path = js.Array("Top")))
+        event(frameWin, "http://127.0.0.1:41234", "socle-state")
         assert(toHost.length == 1)
         // from the extension: a navigate goes to the frame origin, rebuilt with only its fields
-        event(host, "vscode-webview://abc", js.Dynamic.literal(`type` = "socless-navigate", path = js.Array("Top", "a"), select = "b", extra = 1))
+        event(host, "vscode-webview://abc", js.Dynamic.literal(`type` = "socle-navigate", path = js.Array("Top", "a"), select = "b", extra = 1))
         assert(toFrame.length == 1)
         val sent = toFrame(0).asInstanceOf[js.Array[js.Dynamic]]
         assert(sent(1).asInstanceOf[String] == "http://127.0.0.1:41234")
-        assert(js.JSON.stringify(sent(0)) == """{"type":"socless-navigate","path":["Top","a"],"select":"b"}""")
-        event(host, "vscode-webview://abc", js.Dynamic.literal(`type` = "socless-navigate", path = js.Array("Top")))
-        assert(js.JSON.stringify(toFrame(1).asInstanceOf[js.Array[js.Any]](0)) == """{"type":"socless-navigate","path":["Top"],"select":null}""")
+        assert(js.JSON.stringify(sent(0)) == """{"type":"socle-navigate","path":["Top","a"],"select":"b"}""")
+        event(host, "vscode-webview://abc", js.Dynamic.literal(`type` = "socle-navigate", path = js.Array("Top")))
+        assert(js.JSON.stringify(toFrame(1).asInstanceOf[js.Array[js.Any]](0)) == """{"type":"socle-navigate","path":["Top"],"select":null}""")
         // anything else from the extension is not relayed
-        event(host, "vscode-webview://abc", js.Dynamic.literal(`type` = "socless-theme", kind = "dark"))
+        event(host, "vscode-webview://abc", js.Dynamic.literal(`type` = "socle-theme", kind = "dark"))
         assert(toFrame.length == 2, toHost.length == 1)
         // a navigate from a window of another origin (a third page, or the frame posting as itself),
         // or a synthetic event without a source window: not relayed
-        val nav = js.Dynamic.literal(`type` = "socless-navigate", path = js.Array("Top", "x"))
+        val nav = js.Dynamic.literal(`type` = "socle-navigate", path = js.Array("Top", "x"))
         event(js.Dynamic.literal(name = "third window"), "http://127.0.0.1:41234", nav)
         event(host, "http://evil.example", nav)
         event(null, "vscode-webview://abc", nav)
@@ -162,7 +162,7 @@ object LogicTest extends TestSuite {
       }
       test("the Surfer relay carries the four Surfer channel types") {
         val h = Logic.webviewHtml("http://127.0.0.1:41234/?host=vscode", "vscode-webview://abc", "N0nce")
-        for (t <- Seq("socless-surfer-open", "socless-surfer-cmd", "socless-surfer-status", "socless-surfer-closed"))
+        for (t <- Seq("socle-surfer-open", "socle-surfer-cmd", "socle-surfer-status", "socle-surfer-closed"))
           assert(h.contains(t))
       }
       test("Surfer relay: open, cmd and status up from the frame; cmd, status and closed down to it") {
@@ -185,27 +185,27 @@ object LogicTest extends TestSuite {
         run(window, document, observer, (() => vscodeApi): js.Function0[js.Any])
         def event(source: js.Any, origin: String, data: js.Any): Unit =
           onMessage(js.Dynamic.literal(source = source, origin = origin, data = data))
-        val cmd    = js.Dynamic.literal(`type` = "socless-surfer-cmd", cmd = js.Dynamic.literal(`$type` = "Load", url = "u"))
-        val status = js.Dynamic.literal(`type` = "socless-surfer-status", status = js.Dynamic.literal(state = "ready"))
-        val open   = js.Dynamic.literal(`type` = "socless-surfer-open", trace = "u", traceTest = "s.S#t", force = true)
+        val cmd    = js.Dynamic.literal(`type` = "socle-surfer-cmd", cmd = js.Dynamic.literal(`$type` = "Load", url = "u"))
+        val status = js.Dynamic.literal(`type` = "socle-surfer-status", status = js.Dynamic.literal(state = "ready"))
+        val open   = js.Dynamic.literal(`type` = "socle-surfer-open", trace = "u", traceTest = "s.S#t", force = true)
         // up, from the frame's origin only, whole (the open keeps its traceTest)
         for (m <- Seq(open, cmd, status)) event(frameWin, "http://127.0.0.1:41234", m)
         assert(toHost.length == 3)
-        assert(js.JSON.stringify(toHost(0)) == """{"type":"socless-surfer-open","trace":"u","traceTest":"s.S#t","force":true}""")
+        assert(js.JSON.stringify(toHost(0)) == """{"type":"socle-surfer-open","trace":"u","traceTest":"s.S#t","force":true}""")
         event(frameWin, "http://evil.example", cmd)
-        event(frameWin, "http://127.0.0.1:41234", js.Dynamic.literal(`type` = "socless-surfer-closed"))
+        event(frameWin, "http://127.0.0.1:41234", js.Dynamic.literal(`type` = "socle-surfer-closed"))
         assert(toHost.length == 3)
         // down, from the webview host, to the frame origin, rebuilt with only their fields
-        event(host, "vscode-webview://abc", js.Dynamic.literal(`type` = "socless-surfer-cmd", cmd = js.Dynamic.literal(`$type` = "Hello"), extra = 1))
-        event(host, "vscode-webview://abc", js.Dynamic.literal(`type` = "socless-surfer-status", status = js.Dynamic.literal(state = "idle")))
-        event(host, "vscode-webview://abc", js.Dynamic.literal(`type` = "socless-surfer-closed", extra = 1))
+        event(host, "vscode-webview://abc", js.Dynamic.literal(`type` = "socle-surfer-cmd", cmd = js.Dynamic.literal(`$type` = "Hello"), extra = 1))
+        event(host, "vscode-webview://abc", js.Dynamic.literal(`type` = "socle-surfer-status", status = js.Dynamic.literal(state = "idle")))
+        event(host, "vscode-webview://abc", js.Dynamic.literal(`type` = "socle-surfer-closed", extra = 1))
         event(host, "vscode-webview://abc", open) // not a downward type
         event(host, "http://evil.example", cmd)
         assert(toFrame.length == 3)
         def sent(i: Int) = toFrame(i).asInstanceOf[js.Array[js.Any]]
-        assert(js.JSON.stringify(sent(0)(0)) == """{"type":"socless-surfer-cmd","cmd":{"$type":"Hello"}}""")
-        assert(js.JSON.stringify(sent(1)(0)) == """{"type":"socless-surfer-status","status":{"state":"idle"}}""")
-        assert(js.JSON.stringify(sent(2)(0)) == """{"type":"socless-surfer-closed"}""")
+        assert(js.JSON.stringify(sent(0)(0)) == """{"type":"socle-surfer-cmd","cmd":{"$type":"Hello"}}""")
+        assert(js.JSON.stringify(sent(1)(0)) == """{"type":"socle-surfer-status","status":{"state":"idle"}}""")
+        assert(js.JSON.stringify(sent(2)(0)) == """{"type":"socle-surfer-closed"}""")
         assert((0 until 3).forall(i => sent(i)(1).asInstanceOf[String] == "http://127.0.0.1:41234"))
       }
       test("no script without a frame origin") {
@@ -249,12 +249,12 @@ object LogicTest extends TestSuite {
     }
 
     test("panelTitle") {
-      assert(Logic.panelTitle(None) == "SoCLess design")
-      assert(Logic.panelTitle(Some("  ")) == "SoCLess design")
-      assert(Logic.panelTitle(Some("GCD computes gcd(48, 18)")) == "SoCLess: GCD computes gcd(48, 18)")
+      assert(Logic.panelTitle(None) == "Socle design")
+      assert(Logic.panelTitle(Some("  ")) == "Socle design")
+      assert(Logic.panelTitle(Some("GCD computes gcd(48, 18)")) == "Socle: GCD computes gcd(48, 18)")
       val long = "a" * 100
       val t = Logic.panelTitle(Some(long))
-      assert(t == "SoCLess: " + "a" * 59 + "…")
+      assert(t == "Socle: " + "a" * 59 + "…")
     }
 
     test("surferUrl") {
@@ -269,7 +269,7 @@ object LogicTest extends TestSuite {
     }
 
     test("surferColumn") {
-      // the column after the SoCLess panel's, so the tab never covers it; beside the editor without a panel
+      // the column after the Socle panel's, so the tab never covers it; beside the editor without a panel
       assert(Logic.surferColumn(Some(1)) == 2, Logic.surferColumn(Some(2)) == 3)
       assert(Logic.surferColumn(None) == -2) // vscode.ViewColumn.Beside
     }
@@ -283,10 +283,10 @@ object LogicTest extends TestSuite {
     test("showWavesProblem") {
       assert(Logic.showWavesProblem(Some("surfer-panel"), hasTrace = true).isEmpty)
       val m = Logic.showWavesProblem(Some("surfer"), hasTrace = true).get
-      assert(m.contains("socless.waveViewer"), m.contains("surfer-panel"))
-      assert(Logic.showWavesProblem(None, hasTrace = true).get.contains("socless.waveViewer")) // the default is surfer
+      assert(m.contains("socle.waveViewer"), m.contains("surfer-panel"))
+      assert(Logic.showWavesProblem(None, hasTrace = true).get.contains("socle.waveViewer")) // the default is surfer
       // a View design without a Simulate has no trace
-      assert(Logic.showWavesProblem(Some("surfer-panel"), hasTrace = false).contains("SoCLess: Run Simulate first."))
+      assert(Logic.showWavesProblem(Some("surfer-panel"), hasTrace = false).contains("Socle: Run Simulate first."))
     }
 
     test("surferTest") {
@@ -303,27 +303,27 @@ object LogicTest extends TestSuite {
 
     test("answersClosed") {
       def cmd(t: String): js.Any =
-        js.Dynamic.literal(`type` = "socless-surfer-cmd", cmd = js.Dynamic.literal(`$type` = t))
-      // a Hello with no Surfer tab: the extension answers socless-surfer-closed
+        js.Dynamic.literal(`type` = "socle-surfer-cmd", cmd = js.Dynamic.literal(`$type` = t))
+      // a Hello with no Surfer tab: the extension answers socle-surfer-closed
       assert(Logic.answersClosed(cmd("Hello"), tabOpen = false))
       // with a tab (ready or not), it goes to the tab; other commands always do
       assert(!Logic.answersClosed(cmd("Hello"), tabOpen = true))
       assert(!Logic.answersClosed(cmd("Load"), tabOpen = false))
-      assert(!Logic.answersClosed(js.Dynamic.literal(`type` = "socless-surfer-cmd", cmd = "Hello"), tabOpen = false))
+      assert(!Logic.answersClosed(js.Dynamic.literal(`type` = "socle-surfer-cmd", cmd = "Hello"), tabOpen = false))
       assert(!Logic.answersClosed(null, tabOpen = false))
     }
 
     test("route") {
       def msg(t: String): js.Any = js.Dynamic.literal(`type` = t)
-      val cmd = msg("socless-surfer-cmd")
-      val st  = msg("socless-surfer-status")
+      val cmd = msg("socle-surfer-cmd")
+      val st  = msg("socle-surfer-status")
       assert(Logic.route("panel", cmd).exists { case (to, m) => to == "surfer" && (m eq cmd) })
       assert(Logic.route("surfer", st).exists { case (to, m) => to == "panel" && (m eq st) })
       // wrong directions
       assert(Logic.route("surfer", cmd).isEmpty, Logic.route("panel", st).isEmpty)
       // unknown types, the open (handled by the extension), not an object
-      assert(Logic.route("panel", msg("socless-state")).isEmpty, Logic.route("panel", msg("socless-surfer-open")).isEmpty)
-      assert(Logic.route("panel", "socless-surfer-cmd").isEmpty, Logic.route("panel", null).isEmpty)
+      assert(Logic.route("panel", msg("socle-state")).isEmpty, Logic.route("panel", msg("socle-surfer-open")).isEmpty)
+      assert(Logic.route("panel", "socle-surfer-cmd").isEmpty, Logic.route("panel", null).isEmpty)
       assert(Logic.route("elsewhere", cmd).isEmpty)
     }
 
@@ -354,7 +354,7 @@ object LogicTest extends TestSuite {
 
     test("SurferQueue") {
       def cmd(t: String, n: Int): js.Any =
-        js.Dynamic.literal(`type` = "socless-surfer-cmd", cmd = js.Dynamic.literal(`$type` = t, n = n))
+        js.Dynamic.literal(`type` = "socle-surfer-cmd", cmd = js.Dynamic.literal(`$type` = t, n = n))
       def tags(xs: Seq[js.Any]): Seq[String] =
         xs.map { m => val c = m.asInstanceOf[js.Dynamic].cmd; s"${c.selectDynamic("$type")}${c.n}" }
       val sent = scala.collection.mutable.ArrayBuffer.empty[js.Any]
@@ -447,11 +447,11 @@ object LogicTest extends TestSuite {
       }
       test("missing names the command and the setting") {
         val m = Logic.javaProblem("/x/java", None).get
-        assert(m.contains("/x/java"), m.contains("socless.javaPath"), m.contains("21"))
+        assert(m.contains("/x/java"), m.contains("socle.javaPath"), m.contains("21"))
       }
       test("too old names the version and the setting") {
         val m = Logic.javaProblem("java", Some(17)).get
-        assert(m.contains("17"), m.contains("socless.javaPath"), m.contains("21"))
+        assert(m.contains("17"), m.contains("socle.javaPath"), m.contains("21"))
       }
       test("both messages say to reload the window") {
         assert(Logic.javaProblem("java", None).get.endsWith("then reload the window."))

@@ -1,12 +1,12 @@
-package socless.vscode
+package socle.vscode
 
 import scala.scalajs.js
-import socless.vscode.facade._
+import socle.vscode.facade._
 
 /** The Surfer tab: a webview on the language server's UI in Surfer-only mode (`view=surfer`), driven
-  * by the SoCLess panel through the extension. Its commands come from the panel ([[post]]) and wait
+  * by the Socle panel through the extension. Its commands come from the panel ([[post]]) and wait
   * in a [[SurferQueue]] until the tab reports its first status; its statuses go to the panel, and
-  * `socless-surfer-closed` when it is closed. Its context is retained, so moving or hiding it never
+  * `socle-surfer-closed` when it is closed. Its context is retained, so moving or hiding it never
   * reloads Surfer.
   */
 object SurferTab {
@@ -21,7 +21,7 @@ object SurferTab {
   private val queue = new SurferQueue(m => current.foreach(_.webview.postMessage(m)))
   private val opens = new SurferOpens
 
-  /** Creates the tab in the column after the SoCLess panel's (or reveals the existing one where it
+  /** Creates the tab in the column after the Socle panel's (or reveals the existing one where it
     * is) on the server of the panel's last view, titled after `test` (None keeps the last one).
     * Nothing without a view.
     */
@@ -49,7 +49,7 @@ object SurferTab {
     if (panel.webview.html != html) { panel.webview.html = html; queue.reset() }
   }
 
-  /** A `socless-surfer-open` from the panel: `{trace, traceTest, force}`, admitted by
+  /** A `socle-surfer-open` from the panel: `{trace, traceTest, force}`, admitted by
     * [[SurferOpens]]. The tab is titled after the trace's test (`traceTest`, see
     * [[Logic.surferTest]]), else `test` (the panel's). */
   def onOpenRequest(msg: js.Any, test: Option[String]): Unit = {
@@ -60,13 +60,13 @@ object SurferTab {
     if (opens.admit(trace, force)) open(Logic.surferTest(traceTest, test))
   }
 
-  /** Whether a Simulate gave the panel a trace (an open request carried one), for `socless.showWaves`. */
+  /** Whether a Simulate gave the panel a trace (an open request carried one), for `socle.showWaves`. */
   def traced: Boolean = opens.traced
 
-  /** A `socless-surfer-cmd` for the tab: queued until the tab is ready. A `Hello` with no tab is
-    * answered at once with `socless-surfer-closed` ([[Logic.answersClosed]]). */
+  /** A `socle-surfer-cmd` for the tab: queued until the tab is ready. A `Hello` with no tab is
+    * answered at once with `socle-surfer-closed` ([[Logic.answersClosed]]). */
   def post(msg: js.Any): Unit =
-    if (Logic.answersClosed(msg, current.isDefined)) Panel.post(js.Dynamic.literal(`type` = "socless-surfer-closed"))
+    if (Logic.answersClosed(msg, current.isDefined)) Panel.post(js.Dynamic.literal(`type` = "socle-surfer-closed"))
     else queue.offer(msg)
 
   private def nonce(): String = {
@@ -77,7 +77,7 @@ object SurferTab {
 
   private def create(): WebviewPanel = {
     val panel = window.createWebviewPanel(
-      "socless.surfer",
+      "socle.surfer",
       Logic.surferTitle(lastTest),
       // After the panel's column, so it never covers the schematic (Beside is the active editor's).
       js.Dynamic.literal(viewColumn = Logic.surferColumn(Panel.column), preserveFocus = true),
@@ -96,7 +96,7 @@ object SurferTab {
       queue.reset()
       messages.dispose()
       listener.foreach(_.dispose())
-      Panel.post(js.Dynamic.literal(`type` = "socless-surfer-closed"))
+      Panel.post(js.Dynamic.literal(`type` = "socle-surfer-closed"))
     })
     queue.reset()
     page = Some((nonce(), Logic.themeKind(window.activeColorTheme.kind)))

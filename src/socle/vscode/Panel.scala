@@ -1,13 +1,13 @@
-package socless.vscode
+package socle.vscode
 
 import scala.scalajs.js
-import socless.vscode.facade._
+import socle.vscode.facade._
 
-/** The single SoCLess webview: an iframe on the language server's loopback UI, in embedded mode. */
+/** The single Socle webview: an iframe on the language server's loopback UI, in embedded mode. */
 object Panel {
   private var current: Option[(WebviewPanel, PanelPage)] = None
 
-  /** The last URL the server asked to show, for `socless.showPanel` and `socless._panelUrl`. */
+  /** The last URL the server asked to show, for `socle.showPanel` and `socle._panelUrl`. */
   var lastUrl: Option[String] = None
 
   /** The test of the last view, for the panel title. */
@@ -48,7 +48,7 @@ object Panel {
   /** A new panel and its page: one nonce and the current VS Code theme kind for the panel's life. */
   private def create(): (WebviewPanel, PanelPage) = {
     val panel = window.createWebviewPanel(
-      "socless.panel",
+      "socle.panel",
       Logic.panelTitle(lastTest),
       js.Dynamic.literal(viewColumn = ViewColumn.Beside, preserveFocus = true),
       js.Dynamic.literal(enableScripts = true, retainContextWhenHidden = true),
@@ -56,13 +56,13 @@ object Panel {
     // The listeners live and die with this panel, not in ctx.subscriptions (one per panel ever made).
     val messages = panel.webview.onDidReceiveMessage { (msg: js.Any) =>
       Logic.msgType(msg) match {
-        case Some("socless-state") =>
+        case Some("socle-state") =>
           // The UI listens from its first state on.
           uiReady = true
           pendingNavigate.foreach(m => panel.webview.postMessage(m))
           pendingNavigate = None
           Sidebar.onUiState(msg)
-        case Some("socless-surfer-open") => SurferTab.onOpenRequest(msg, lastTest)
+        case Some("socle-surfer-open") => SurferTab.onOpenRequest(msg, lastTest)
         case _ => Logic.route("panel", msg).foreach { case (_, m) => SurferTab.post(m) }
       }
     }
@@ -81,7 +81,7 @@ object Panel {
     made
   }
 
-  /** Sends a socless-navigate message to the UI (once it is ready) and reveals the panel. */
+  /** Sends a socle-navigate message to the UI (once it is ready) and reveals the panel. */
   def navigate(msg: js.Any): Unit = current.foreach { case (panel, _) =>
     panel.reveal(js.undefined, preserveFocus = true) // where it is
     if (uiReady) panel.webview.postMessage(msg) else pendingNavigate = Some(msg)

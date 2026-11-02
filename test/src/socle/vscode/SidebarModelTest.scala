@@ -1,4 +1,4 @@
-package socless.vscode
+package socle.vscode
 
 import scala.scalajs.js
 import utest._
@@ -17,7 +17,7 @@ object SidebarModelTest extends TestSuite {
       |]}""".stripMargin)
 
   private val state = json(
-    """{"type":"socless-state",
+    """{"type":"socle-state",
       | "design":{"top":"DeepSoc","modules":[
       |   {"name":"DeepSoc","scalaClass":"deephier.DeepSoc","kind":"internal","source":{"file":"/ws/DeepSoc.scala","line":162},
       |    "children":[{"name":"cluster0","type":"Cluster"},{"name":"pipe","type":"Queue4"}]},
@@ -163,20 +163,20 @@ object SidebarModelTest extends TestSuite {
         assert(det.ports == Seq(("clock", "in", "Clock"), ("io", "out", "CoreIO")))
       }
       test("no design yet") {
-        val u = parseUiState(json("""{"type":"socless-state","design":null,"path":[],"selection":null,"details":null}""")).get
+        val u = parseUiState(json("""{"type":"socle-state","design":null,"path":[],"selection":null,"details":null}""")).get
         assert(u.design == Some(None), u.details == None, u.path == Nil)
       }
       test("no design key: the design is unchanged") {
-        val u = parseUiState(json("""{"type":"socless-state","path":["A"],"selection":null,"details":null}""")).get
+        val u = parseUiState(json("""{"type":"socle-state","path":["A"],"selection":null,"details":null}""")).get
         assert(u.design == None, u.path == List("A"))
       }
       test("not a state") {
-        assert(parseUiState(json("""{"type":"socless-theme","kind":"dark"}""")) == None)
-        assert(parseUiState(json("""{"type":"socless-state","path":"x"}""")) == None)
-        assert(parseUiState(json("""{"type":"socless-state","path":[1]}""")) == None)
-        assert(parseUiState(json("""{"type":"socless-state","path":[],"selection":3}""")) == None)
-        assert(parseUiState(json("""{"type":"socless-state","path":[],"design":{"top":1}}""")) == None)
-        assert(parseUiState(null) == None, parseUiState("socless-state") == None)
+        assert(parseUiState(json("""{"type":"socle-theme","kind":"dark"}""")) == None)
+        assert(parseUiState(json("""{"type":"socle-state","path":"x"}""")) == None)
+        assert(parseUiState(json("""{"type":"socle-state","path":[1]}""")) == None)
+        assert(parseUiState(json("""{"type":"socle-state","path":[],"selection":3}""")) == None)
+        assert(parseUiState(json("""{"type":"socle-state","path":[],"design":{"top":1}}""")) == None)
+        assert(parseUiState(null) == None, parseUiState("socle-state") == None)
       }
     }
 
@@ -242,7 +242,7 @@ object SidebarModelTest extends TestSuite {
 
     test("navigateMessage") {
       val m = navigateMessage(List("DeepSoc", "cluster0"), None).asInstanceOf[js.Dynamic]
-      assert(m.`type`.asInstanceOf[String] == "socless-navigate")
+      assert(m.`type`.asInstanceOf[String] == "socle-navigate")
       assert(m.path.asInstanceOf[js.Array[String]].toSeq == Seq("DeepSoc", "cluster0"), m.select == null)
       val s = navigateMessage(List("DeepSoc"), Some("pipe")).asInstanceOf[js.Dynamic]
       assert(s.select.asInstanceOf[String] == "pipe")

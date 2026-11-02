@@ -1,4 +1,4 @@
-package socless.vscode
+package socle.vscode
 
 import scala.scalajs.js
 
@@ -14,7 +14,7 @@ object Logic {
 
   /** The language server jar: the setting if non-blank, else the one bundled in the extension. */
   def serverJar(setting: Option[String], extensionDir: String): String =
-    nonBlank(setting).getOrElse(extensionDir + "/server/socless-lsp.jar")
+    nonBlank(setting).getOrElse(extensionDir + "/server/socle-lsp.jar")
 
   private val VersionRe = """version "([0-9][^"]*)"""".r
 
@@ -33,9 +33,9 @@ object Logic {
   def javaProblem(javaCmd: String, major: Option[Int]): Option[String] = major match {
     case Some(m) if m >= MinJava => None
     case Some(m) =>
-      Some(s"SoCLess needs Java $MinJava or newer, but '$javaCmd' is Java $m. Set the socless.javaPath setting to a Java $MinJava+ executable, then reload the window.")
+      Some(s"Socle needs Java $MinJava or newer, but '$javaCmd' is Java $m. Set the socle.javaPath setting to a Java $MinJava+ executable, then reload the window.")
     case None =>
-      Some(s"SoCLess needs Java $MinJava or newer, but '$javaCmd' could not be run. Set the socless.javaPath setting to a Java $MinJava+ executable, then reload the window.")
+      Some(s"Socle needs Java $MinJava or newer, but '$javaCmd' could not be run. Set the socle.javaPath setting to a Java $MinJava+ executable, then reload the window.")
   }
 
   /** The language server's JVM arguments. An IPv4-only stack: by default Java binds 127.0.0.1 as an
@@ -55,7 +55,7 @@ object Logic {
     o
   }
 
-  /** The `socless/cursor` notification params. */
+  /** The `socle/cursor` notification params. */
   def cursorParams(uri: String, line: Int): js.Object =
     js.Dynamic.literal(uri = uri, line = line)
 
@@ -91,9 +91,9 @@ object Logic {
 
   private val TitleMax = 60
 
-  /** The panel's tab title: `SoCLess: <test>`, the test name cut to 60 characters (the last one "…"). */
+  /** The panel's tab title: `Socle: <test>`, the test name cut to 60 characters (the last one "…"). */
   def panelTitle(test: Option[String]): String =
-    nonBlank(test).fold("SoCLess design")(t => s"SoCLess: ${shortTest(t)}")
+    nonBlank(test).fold("Socle design")(t => s"Socle: ${shortTest(t)}")
 
   /** The Surfer tab's title: `Surfer: <test>`, cut as in [[panelTitle]], or `Surfer`. */
   def surferTitle(test: Option[String]): String =
@@ -109,22 +109,22 @@ object Logic {
   /** `vscode.ViewColumn.Beside`: the column beside the active one. */
   val ViewColumnBeside = -2
 
-  /** The column a new Surfer tab opens in: the one after the SoCLess panel's (`panel`), so it never
+  /** The column a new Surfer tab opens in: the one after the Socle panel's (`panel`), so it never
     * covers the schematic; beside the active editor when there is no panel. */
   def surferColumn(panel: Option[Int]): Int = panel.fold(ViewColumnBeside)(_ + 1)
 
-  /** The column `Panel.show` reveals the SoCLess panel in: its own (`existing`), so it never moves
+  /** The column `Panel.show` reveals the Socle panel in: its own (`existing`), so it never moves
     * (Beside is relative to the active editor, which may be the Surfer tab); beside the active editor
     * for a fresh panel. */
   def panelRevealColumn(existing: Option[Int]): Int = existing.getOrElse(ViewColumnBeside)
 
-  /** Why `socless.showWaves` has nothing to show: the viewer is not `surfer-panel` (`viewer`, None
+  /** Why `socle.showWaves` has nothing to show: the viewer is not `surfer-panel` (`viewer`, None
     * when unset, whose default is `surfer`), or no Simulate has given the panel a trace yet
     * (`hasTrace`, see [[SurferOpens.traced]]; a View design alone has none). None when it can. */
   def showWavesProblem(viewer: Option[String], hasTrace: Boolean): Option[String] =
     if (!nonBlank(viewer).contains("surfer-panel"))
-      Some("SoCLess: the Surfer tab is for the surfer-panel viewer. Set the socless.waveViewer setting to surfer-panel, then Simulate.")
-    else if (!hasTrace) Some("SoCLess: Run Simulate first.")
+      Some("Socle: the Surfer tab is for the surfer-panel viewer. Set the socle.waveViewer setting to surfer-panel, then Simulate.")
+    else if (!hasTrace) Some("Socle: Run Simulate first.")
     else None
 
   /** The test the Surfer tab is titled after: the test part of the trace's `traceTest`
@@ -137,7 +137,7 @@ object Logic {
       case i  => t.substring(i + 1)
     }).flatMap(t => nonBlank(Some(t))).orElse(fallback)
 
-  /** A `socless-surfer-cmd`'s command kind (`cmd.$type`), "" when it has none. */
+  /** A `socle-surfer-cmd`'s command kind (`cmd.$type`), "" when it has none. */
   def cmdKind(msg: js.Any): String =
     if (msg == null || js.typeOf(msg) != "object") ""
     else {
@@ -148,19 +148,19 @@ object Logic {
       }
     }
 
-  /** Whether the extension answers the panel's command `msg` itself with `socless-surfer-closed`:
+  /** Whether the extension answers the panel's command `msg` itself with `socle-surfer-closed`:
     * a `Hello` while there is no Surfer tab (`tabOpen`), so a reloaded panel shows the tab closed.
     * With a tab, ready or not, the Hello goes to it (see [[SurferQueue]]). */
   def answersClosed(msg: js.Any, tabOpen: Boolean): Boolean = !tabOpen && cmdKind(msg) == "Hello"
 
-  /** Where a webview's Surfer message goes: a `socless-surfer-cmd` from the SoCLess panel
-    * (`from = "panel"`) to the Surfer tab (`"surfer"`), a `socless-surfer-status` from the tab to
-    * the panel. None for anything else, a wrong direction included (`socless-surfer-open` is the
+  /** Where a webview's Surfer message goes: a `socle-surfer-cmd` from the Socle panel
+    * (`from = "panel"`) to the Surfer tab (`"surfer"`), a `socle-surfer-status` from the tab to
+    * the panel. None for anything else, a wrong direction included (`socle-surfer-open` is the
     * extension's own business, see [[SurferOpens]]).
     */
   def route(from: String, msg: js.Any): Option[(String, js.Any)] = (from, msgType(msg)) match {
-    case ("panel", Some("socless-surfer-cmd"))     => Some(("surfer", msg))
-    case ("surfer", Some("socless-surfer-status")) => Some(("panel", msg))
+    case ("panel", Some("socle-surfer-cmd"))     => Some(("surfer", msg))
+    case ("surfer", Some("socle-surfer-status")) => Some(("panel", msg))
     case _                                         => None
   }
 
@@ -177,12 +177,12 @@ object Logic {
 
   /** The webview page: a CSP allowing only `frameUrl`'s origin as a frame and only the `nonce` script,
     * one full-size iframe on it, and a script that forwards VS Code's theme kind (the `vscode-*` body
-    * classes) to the iframe as `{type: "socless-theme", kind}`, on load and on every theme change.
-    * The script also relays the side panel channel: a `socless-state` from the iframe (its window
-    * and origin) to the extension, and a `socless-navigate` from the extension to the iframe origin.
-    * Both the SoCLess panel and the Surfer tab use it, so it relays the Surfer channel too:
-    * `socless-surfer-open`, `-cmd` and `-status` up from the iframe, `-cmd`, `-status` and
-    * `-closed` down to it. Each tab's page posts its own `socless-theme`.
+    * classes) to the iframe as `{type: "socle-theme", kind}`, on load and on every theme change.
+    * The script also relays the side panel channel: a `socle-state` from the iframe (its window
+    * and origin) to the extension, and a `socle-navigate` from the extension to the iframe origin.
+    * Both the Socle panel and the Surfer tab use it, so it relays the Surfer channel too:
+    * `socle-surfer-open`, `-cmd` and `-status` up from the iframe, `-cmd`, `-status` and
+    * `-closed` down to it. Each tab's page posts its own `socle-theme`.
     * Without a frame origin there is no script.
     */
   def webviewHtml(frameUrl: String, cspSource: String, nonce: String): String = {
@@ -206,15 +206,15 @@ object Logic {
          |    var k = kind();
          |    if (!force && k === last) return;
          |    last = k;
-         |    if (frame.contentWindow) frame.contentWindow.postMessage({ type: 'socless-theme', kind: k }, "$o");
+         |    if (frame.contentWindow) frame.contentWindow.postMessage({ type: 'socle-theme', kind: k }, "$o");
          |  }
          |  new MutationObserver(function () { post(false); }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
          |  frame.addEventListener('load', function () { post(true); });
-         |  // The side panel channel: the UI's socless-state goes up to the extension, the
-         |  // extension's socless-navigate goes down to the UI (its origin only). The Surfer
-         |  // channel, between the SoCLess panel and the Surfer tab through the extension:
-         |  // socless-surfer-open, -cmd and -status go up; -cmd, -status and -closed go down.
-         |  var up = ['socless-state', 'socless-surfer-open', 'socless-surfer-cmd', 'socless-surfer-status'];
+         |  // The side panel channel: the UI's socle-state goes up to the extension, the
+         |  // extension's socle-navigate goes down to the UI (its origin only). The Surfer
+         |  // channel, between the Socle panel and the Surfer tab through the extension:
+         |  // socle-surfer-open, -cmd and -status go up; -cmd, -status and -closed go down.
+         |  var up = ['socle-state', 'socle-surfer-open', 'socle-surfer-cmd', 'socle-surfer-status'];
          |  var host = acquireVsCodeApi();
          |  window.addEventListener('message', function (e) {
          |    var d = e.data;
@@ -227,11 +227,11 @@ object Logic {
          |      // that is neither the parent, the top nor one of the parent's frames (seen in the e2e).
          |      // Each is rebuilt with only its own fields.
          |      var m = null;
-         |      if (d.type === 'socless-navigate')
+         |      if (d.type === 'socle-navigate')
          |        m = { type: d.type, path: d.path, select: d.select === undefined ? null : d.select };
-         |      else if (d.type === 'socless-surfer-cmd') m = { type: d.type, cmd: d.cmd };
-         |      else if (d.type === 'socless-surfer-status') m = { type: d.type, status: d.status };
-         |      else if (d.type === 'socless-surfer-closed') m = { type: d.type };
+         |      else if (d.type === 'socle-surfer-cmd') m = { type: d.type, cmd: d.cmd };
+         |      else if (d.type === 'socle-surfer-status') m = { type: d.type, status: d.status };
+         |      else if (d.type === 'socle-surfer-closed') m = { type: d.type };
          |      if (m) frame.contentWindow.postMessage(m, "$o");
          |    }
          |  });
@@ -276,7 +276,7 @@ final class Debouncer(delayMs: Int, schedule: (Int, () => Unit) => Any, cancel: 
   }
 }
 
-/** The `socless-surfer-cmd` messages for a Surfer tab that has not reported yet. Until [[ready]],
+/** The `socle-surfer-cmd` messages for a Surfer tab that has not reported yet. Until [[ready]],
   * [[offer]] keeps only the latest message of each command kind (`cmd.$type`), and a Load clears
   * the queued Show and Focus (they were of the previous trace); [[ready]] sends them
   * (`send`) in the order Load, Show, Focus, Hello (then any other kind) and returns them; after it, [[offer]]
@@ -315,8 +315,8 @@ final class SurferQueue(send: js.Any => Unit) {
   def reset(): Unit = isReady = false
 }
 
-/** Which `socless-surfer-open` requests open or reveal the Surfer tab: a forced one (the Show
-  * Surfer button, `socless.showWaves`) always; an unforced one (a new trace in the panel) only for a
+/** Which `socle-surfer-open` requests open or reveal the Surfer tab: a forced one (the Show
+  * Surfer button, `socle.showWaves`) always; an unforced one (a new trace in the panel) only for a
   * trace not opened before in this window, so a reloaded or reopened panel does not bring back a
   * tab the user closed.
   */

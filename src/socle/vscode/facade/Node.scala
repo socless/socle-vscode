@@ -1,4 +1,4 @@
-package socless.vscode.facade
+package socle.vscode.facade
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport

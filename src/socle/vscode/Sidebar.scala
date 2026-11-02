@@ -1,18 +1,18 @@
-package socless.vscode
+package socle.vscode
 
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
-import socless.vscode.facade._
+import socle.vscode.facade._
 import SidebarModel._
 
-/** The SoCLess side panel: the Tests, Hierarchy and Details tree views of the
+/** The Socle side panel: the Tests, Hierarchy and Details tree views of the
   * activity bar container. Decisions live in [[SidebarModel]]; this only wires
-  * vscode. Tests come from the language server (`socless/tests`, refreshed on
-  * `socless/testsChanged`, run states from `socless/status`); Hierarchy and
-  * Details from the UI in the panel (`socless-state`, through [[Panel]]).
+  * vscode. Tests come from the language server (`socle/tests`, refreshed on
+  * `socle/testsChanged`, run states from `socle/status`); Hierarchy and
+  * Details from the UI in the panel (`socle-state`, through [[Panel]]).
   *
   * Tree elements are plain objects holding their tree item (`item`), so the
-  * e2e's `socless._views` snapshot and the inline actions see real fields.
+  * e2e's `socle._views` snapshot and the inline actions see real fields.
   */
 object Sidebar {
   private var suites      = Seq.empty[SuiteInfo]
@@ -77,7 +77,7 @@ object Sidebar {
         s.tests.map { t =>
           val row = testRow(s.suite, s.file, t, tracker.state(TestKey(s.suite, t.name)))
           js.Dynamic.literal(kind = "test", suite = s.suite, file = s.file, test = t.name, line = t.line,
-            item = item(row, Flat, Some(command("socless._openTest", "Open test", s.file, t.line))))
+            item = item(row, Flat, Some(command("socle._openTest", "Open test", s.file, t.line))))
         }
       }.map(e => e: js.Dynamic).toJSArray
     case _ => js.Array()
@@ -89,9 +89,9 @@ object Sidebar {
     testsEvents.fire(js.undefined)
   }
 
-  /** Asks the server for the tests (`socless/tests`); a failure keeps the last list. */
+  /** Asks the server for the tests (`socle/tests`); a failure keeps the last list. */
   private def fetchTests(): Unit = client.foreach { c =>
-    c.sendRequest("socless/tests").`then`[Unit] { (r: js.Any) =>
+    c.sendRequest("socle/tests").`then`[Unit] { (r: js.Any) =>
       suites = parseTests(r)
       testsLoaded = true
       refreshTests()
@@ -114,10 +114,10 @@ object Sidebar {
     * so instead of marking the test running; a rejected View design is not running either. */
   private def runOnItem(serverCommand: String, el: js.Any): Unit = testArgs(el).foreach { case (file, suite, test) =>
     if (!client.exists(_.isRunning()))
-      window.showErrorMessage(problem.getOrElse("SoCLess: the language server is not running."))
+      window.showErrorMessage(problem.getOrElse("Socle: the language server is not running."))
     else {
       val key  = TestKey(suite, test)
-      val view = serverCommand == "socless.viewDesign"
+      val view = serverCommand == "socle.viewDesign"
       if (view) { tracker.viewStarted(key); refreshTests() }
       commands.executeCommand(serverCommand, file, suite, test).asInstanceOf[js.Dynamic].`catch` { (_: js.Any) =>
         if (view) { tracker.viewNotStarted(key); refreshTests() }
@@ -138,7 +138,7 @@ object Sidebar {
     hierElements.get(id).orElse(hierRow(d, path).map { r =>
       val e = js.Dynamic.literal(kind = "hier", path = path.toJSArray,
         item = item(r, if (!r.expandable) Flat else if (path.size == 1) Expanded else Collapsed,
-          Some(command("socless._openHierarchy", "Show in the schematic", path.toJSArray))))
+          Some(command("socle._openHierarchy", "Show in the schematic", path.toJSArray))))
       hierElements += id -> e
       e
     })
@@ -206,28 +206,28 @@ object Sidebar {
       ctx.subscriptions.push(v)
       v
     }
-    testsView = Some(view("socless.tests", provider(testsEvents, testsChildren)))
-    hierView = Some(view("socless.hierarchy", provider(hierEvents, hierChildrenOf, hierParent)))
-    detailsView = Some(view("socless.details", provider(detailsEvents, detailsChildren)))
+    testsView = Some(view("socle.tests", provider(testsEvents, testsChildren)))
+    hierView = Some(view("socle.hierarchy", provider(hierEvents, hierChildrenOf, hierParent)))
+    detailsView = Some(view("socle.details", provider(detailsEvents, detailsChildren)))
     hierView.foreach(_.message = NoDesign)
     detailsView.foreach(_.message = NoDesign)
     hierView.foreach(v => ctx.subscriptions.push(v.onDidChangeVisibility((_: js.Any) => revealDrillPath())))
     Seq(testsEvents, hierEvents, detailsEvents).foreach(e => ctx.subscriptions.push(e))
 
     def register(id: String, f: js.Function): Unit = ctx.subscriptions.push(commands.registerCommand(id, f))
-    register("socless.viewDesignItem", ((el: js.Any) => runOnItem("socless.viewDesign", el)): js.Function1[js.Any, Unit])
-    register("socless.simulateItem", ((el: js.Any) => runOnItem("socless.simulate", el)): js.Function1[js.Any, Unit])
-    register("socless.refreshTests", (() => fetchTests()): js.Function0[Unit])
-    register("socless.openSettings",
-      (() => ignore(commands.executeCommand("workbench.action.openSettings", "@ext:socless.socless"))): js.Function0[Unit])
-    register("socless._openTest",
+    register("socle.viewDesignItem", ((el: js.Any) => runOnItem("socle.viewDesign", el)): js.Function1[js.Any, Unit])
+    register("socle.simulateItem", ((el: js.Any) => runOnItem("socle.simulate", el)): js.Function1[js.Any, Unit])
+    register("socle.refreshTests", (() => fetchTests()): js.Function0[Unit])
+    register("socle.openSettings",
+      (() => ignore(commands.executeCommand("workbench.action.openSettings", "@ext:socle.socle"))): js.Function0[Unit])
+    register("socle._openTest",
       ((file: String, line: Int) => openAt(Uri.parse(file), line, preserveFocus = false)): js.Function2[String, Int, Unit])
-    register("socless._openHierarchy", ((path: js.Any) => openHierarchy(path)): js.Function1[js.Any, Unit])
-    register("socless._views", (() => snapshot()): js.Function0[js.Any])
+    register("socle._openHierarchy", ((path: js.Any) => openHierarchy(path)): js.Function1[js.Any, Unit])
+    register("socle._views", (() => snapshot()): js.Function0[js.Any])
   }
 
   /** Hooks the language client: tests and fresh run states on every (re)start, tests on
-    * `socless/testsChanged`, run states on `socless/status`, a message while the server is stopped. */
+    * `socle/testsChanged`, run states on `socle/status`, a message while the server is stopped. */
   def attach(c: LanguageClient, ctx: ExtensionContext): Unit = {
     client = Some(c)
     ctx.subscriptions.push(c.onDidChangeState { (e: js.Dynamic) =>
@@ -236,8 +236,8 @@ object Sidebar {
       if (state == 2) { tracker.reset(); fetchTests() } // Running: a new server knows of no run
       refreshTests()
     })
-    ctx.subscriptions.push(c.onNotification("socless/testsChanged", (_: js.Dynamic) => fetchTests()))
-    ctx.subscriptions.push(c.onNotification("socless/status", (p: js.Dynamic) => {
+    ctx.subscriptions.push(c.onNotification("socle/testsChanged", (_: js.Dynamic) => fetchTests()))
+    ctx.subscriptions.push(c.onNotification("socle/status", (p: js.Dynamic) => {
       def s(v: js.Dynamic) = if (js.typeOf(v) == "string") v.asInstanceOf[String] else ""
       tracker.onStatus(s(p.status), s(p.suite), s(p.test))
       refreshTests()
@@ -247,7 +247,7 @@ object Sidebar {
   /** The server cannot start (Java missing or too old): the Tests view says why. */
   def unavailable(why: String): Unit = { problem = Some(why); refreshTests() }
 
-  /** A `socless-state` from the UI in the panel. */
+  /** A `socle-state` from the UI in the panel. */
   def onUiState(msg: js.Any): Unit = parseUiState(msg).foreach { s =>
     ui = Some(s)
     s.design.filter(_ != design).foreach { d =>
@@ -276,7 +276,7 @@ object Sidebar {
     detailsEvents.fire(js.undefined)
   }
 
-  /** For the e2e (`socless._views`): every row of the three trees, depth first, with its element. */
+  /** For the e2e (`socle._views`): every row of the three trees, depth first, with its element. */
   private def snapshot(): js.Any = {
     def walk(children: js.UndefOr[js.Dynamic] => js.Array[js.Dynamic]): js.Array[js.Dynamic] = {
       val out = js.Array[js.Dynamic]()

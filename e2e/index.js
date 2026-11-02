@@ -1,4 +1,4 @@
-// End-to-end check of the staged SoCLess extension inside a real VS Code.
+// End-to-end check of the staged Socle extension inside a real VS Code.
 // VS Code loads this file through --extensionTestsPath and calls run(); a rejection fails the run.
 // Plain CommonJS: only Node built-ins and the `vscode` module VS Code provides.
 'use strict';
@@ -14,8 +14,8 @@ const GCD_CLASS_LINE = 23; // 0-based line of `class GCD extends Module`
 const DEEP_SPEC_FILE = 'example/test/src/deephier/DeepSocSpec.scala';
 const DEEP_TEST_LINE = 7; // 0-based line of test("DeepSoc elaborates and steps")
 const CLICK_INST = 'cluster0'; // a deephier.Cluster instance in DeepSoc
-const GCD_TITLE = 'SoCLess: GCD computes gcd(48, 18)';
-const DEEP_TITLE = 'SoCLess: DeepSoc elaborates and steps';
+const GCD_TITLE = 'Socle: GCD computes gcd(48, 18)';
+const DEEP_TITLE = 'Socle: DeepSoc elaborates and steps';
 const SURFER_TITLE = 'Surfer: GCD computes gcd(48, 18)';
 
 /** The UI's data-theme for a vscode.ColorThemeKind (null: the default light theme, no attribute). */
@@ -76,31 +76,31 @@ async function getJson(url) {
   return JSON.parse(r.body);
 }
 
-function soclessTabs() {
+function socleTabs() {
   return vscode.window.tabGroups.all
     .flatMap((g) => g.tabs)
-    .filter((t) => t.input instanceof vscode.TabInputWebview && t.input.viewType.endsWith('socless.panel'));
+    .filter((t) => t.input instanceof vscode.TabInputWebview && t.input.viewType.endsWith('socle.panel'));
 }
 
 const isWebview = (t, viewType) => !!t && t.input instanceof vscode.TabInputWebview && t.input.viewType.endsWith(viewType);
 
-/** The Surfer tab(s): webview `socless.surfer`. */
+/** The Surfer tab(s): webview `socle.surfer`. */
 function surferTabs() {
-  return vscode.window.tabGroups.all.flatMap((g) => g.tabs).filter((t) => isWebview(t, 'socless.surfer'));
+  return vscode.window.tabGroups.all.flatMap((g) => g.tabs).filter((t) => isWebview(t, 'socle.surfer'));
 }
 const surferTab = () => surferTabs()[0];
 
-/** The editor groups and their tabs, for the log: `1[GcdSpec.scala*] 2[SoCLess: ...*]` (* active). */
+/** The editor groups and their tabs, for the log: `1[GcdSpec.scala*] 2[Socle: ...*]` (* active). */
 const groupsText = () => vscode.window.tabGroups.all
   .map((g) => `${g.viewColumn}[${g.tabs.map((t) => t.label + (t.isActive ? '*' : '')).join(', ')}]`).join(' ');
 
-/** The Surfer tab and the SoCLess panel are in different editor groups, and both are visible. */
+/** The Surfer tab and the Socle panel are in different editor groups, and both are visible. */
 function apart() {
   const s = surferTabs();
-  const p = soclessTabs();
-  if (s.length !== 1 || p.length !== 1) throw new Error(`expected one Surfer tab and one SoCLess panel, found ${s.length} and ${p.length}: ${groupsText()}`);
+  const p = socleTabs();
+  if (s.length !== 1 || p.length !== 1) throw new Error(`expected one Surfer tab and one Socle panel, found ${s.length} and ${p.length}: ${groupsText()}`);
   if (s[0].group === p[0].group) throw new Error(`the Surfer tab shares the panel's group: ${groupsText()}`);
-  if (!p[0].isActive) throw new Error(`the SoCLess panel is hidden in its group: ${groupsText()}`);
+  if (!p[0].isActive) throw new Error(`the Socle panel is hidden in its group: ${groupsText()}`);
   if (!s[0].isActive) throw new Error(`the Surfer tab is hidden in its group: ${groupsText()}`);
 }
 
@@ -109,13 +109,13 @@ async function activateSurfer() {
   const names = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth'];
   const col = surferTab().group.viewColumn;
   await vscode.commands.executeCommand(`workbench.action.focus${names[col - 1]}EditorGroup`);
-  await poll('the Surfer tab active', 10000, () => isWebview(vscode.window.tabGroups.activeTabGroup.activeTab, 'socless.surfer'));
+  await poll('the Surfer tab active', 10000, () => isWebview(vscode.window.tabGroups.activeTabGroup.activeTab, 'socle.surfer'));
 }
 
 /** One op of webview-click.mjs's wave phase: writes wave-request-<n>.json, waits for its result. */
 let waveOps = 0;
 async function driver(op, args, timeoutMs) {
-  const runDir = process.env.SOCLESS_E2E_DIR;
+  const runDir = process.env.SOCLE_E2E_DIR;
   const n = ++waveOps;
   const requestFile = path.join(runDir, `wave-request-${n}.json`);
   const resultFile = path.join(runDir, `wave-result-${n}.json`);
@@ -147,9 +147,9 @@ async function viewDesignLens(specUri, rel = SPEC_FILE, accept = () => true) {
   });
 }
 
-/** The rows of the side panel's three trees (`socless._views`): {tests, hierarchy, details}. */
+/** The rows of the side panel's three trees (`socle._views`): {tests, hierarchy, details}. */
 async function views() {
-  return (await vscode.commands.executeCommand('socless._views')) || { tests: [], hierarchy: [], details: [] };
+  return (await vscode.commands.executeCommand('socle._views')) || { tests: [], hierarchy: [], details: [] };
 }
 
 /** The Tests view row of `test` (depth 1) under the suite labelled `suite`. */
@@ -179,10 +179,10 @@ async function run() {
   log(`workspace ${root()}`);
   const specUri = vscode.Uri.file(path.join(root(), SPEC_FILE));
 
-  await step('0. SoCLess side panel lists the tests', async () => {
+  await step('0. Socle side panel lists the tests', async () => {
     const cmds = await vscode.commands.getCommands(true);
-    if (!cmds.includes('workbench.view.extension.socless')) throw new Error('no SoCLess view container (workbench.view.extension.socless)');
-    await vscode.commands.executeCommand('workbench.view.extension.socless');
+    if (!cmds.includes('workbench.view.extension.socle')) throw new Error('no Socle view container (workbench.view.extension.socle)');
+    await vscode.commands.executeCommand('workbench.view.extension.socle');
     const row = await poll('the Tests view row of gcd.GcdSpec / GCD computes gcd(48, 18)', 120000, async () =>
       testRow((await views()).tests, 'GcdSpec', 'GCD computes gcd(48, 18)'));
     log(`      Tests view: ${row.label} (${row.id}), icon ${row.icon}`);
@@ -206,8 +206,8 @@ async function run() {
     if (lens.command.arguments[1] !== row.element.suite || lens.command.arguments[2] !== row.element.test) {
       throw new Error(`Tests view item ${row.element.suite} / ${row.element.test} differs from the lens ${lens.command.arguments}`);
     }
-    await vscode.commands.executeCommand('socless.viewDesignItem', row.element);
-    const u = await poll('socless._panelUrl', 180000, () => vscode.commands.executeCommand('socless._panelUrl'));
+    await vscode.commands.executeCommand('socle.viewDesignItem', row.element);
+    const u = await poll('socle._panelUrl', 180000, () => vscode.commands.executeCommand('socle._panelUrl'));
     log(`      panel url ${u}`);
     await poll(`design.json with top GCD at ${u}`, 180000, async () => (await getJson(u + 'design.json')).top === 'GCD', 1000);
     await poll('the GCD test row marked "shown"', 30000, async () =>
@@ -215,10 +215,10 @@ async function run() {
     return u;
   });
 
-  await step('3. SoCLess webview tab exists', async () => {
-    const tabs = await poll('a SoCLess webview tab', 30000, () => soclessTabs().length > 0 && soclessTabs());
+  await step('3. Socle webview tab exists', async () => {
+    const tabs = await poll('a Socle webview tab', 30000, () => socleTabs().length > 0 && socleTabs());
     log(`      tab "${tabs[0].label}" (${tabs[0].input.viewType})`);
-    if (tabs.length !== 1) throw new Error(`expected one SoCLess tab, found ${tabs.length}`);
+    if (tabs.length !== 1) throw new Error(`expected one Socle tab, found ${tabs.length}`);
     if (tabs[0].label !== GCD_TITLE) throw new Error(`tab title "${tabs[0].label}", expected "${GCD_TITLE}"`);
   });
 
@@ -251,18 +251,18 @@ async function run() {
   });
 
   // The tab count going 0 -> 1 is the real check here: Panel.lastUrl is never cleared on dispose, so
-  // `_panelUrl` stays the same even if the server never sends socless/openPanel again.
+  // `_panelUrl` stays the same even if the server never sends socle/openPanel again.
   await step('6. closed panel reopens on View design', async () => {
-    for (const t of soclessTabs()) await vscode.window.tabGroups.close(t);
-    await poll('the SoCLess tab to close', 10000, () => soclessTabs().length === 0);
+    for (const t of socleTabs()) await vscode.window.tabGroups.close(t);
+    await poll('the Socle tab to close', 10000, () => socleTabs().length === 0);
     await openEditor(SPEC_FILE);
     const again = await viewDesignLens(specUri);
     await vscode.commands.executeCommand(again.command.command, ...(again.command.arguments || []));
-    await poll('the SoCLess tab to reopen', 180000, () => soclessTabs().length > 0);
+    await poll('the Socle tab to reopen', 180000, () => socleTabs().length > 0);
     await sleep(2000); // a duplicate panel would show up here
-    const n = soclessTabs().length;
-    if (n !== 1) throw new Error(`expected exactly one SoCLess tab, found ${n}`);
-    const u = await vscode.commands.executeCommand('socless._panelUrl');
+    const n = socleTabs().length;
+    if (n !== 1) throw new Error(`expected exactly one Socle tab, found ${n}`);
+    const u = await vscode.commands.executeCommand('socle._panelUrl');
     if (u !== url) throw new Error(`panel url changed: ${url} -> ${u}`);
   });
 
@@ -271,8 +271,8 @@ async function run() {
   // the UI send POST open with the iframe's Origin, which LiveHttp must accept. GCD has no instance
   // box, so this step views DeepSoc and clicks cluster0 (module Cluster, a source file of this repo).
   await step('7. click in the webview UI opens the instance source', async () => {
-    const runDir = process.env.SOCLESS_E2E_DIR;
-    if (!runDir || !fs.existsSync(runDir)) throw new Error('SOCLESS_E2E_DIR is not set or missing: run through run.sh');
+    const runDir = process.env.SOCLE_E2E_DIR;
+    if (!runDir || !fs.existsSync(runDir)) throw new Error('SOCLE_E2E_DIR is not set or missing: run through run.sh');
     // Room for the schematic: the side bars would leave the webview a few hundred pixels wide.
     await vscode.commands.executeCommand('workbench.action.closeSidebar');
     await vscode.commands.executeCommand('workbench.action.closeAuxiliaryBar');
@@ -284,7 +284,7 @@ async function run() {
       const j = await getJson(url + 'design.json');
       return j.top === 'DeepSoc' && j;
     }, 1000);
-    await poll(`the SoCLess tab titled "${DEEP_TITLE}"`, 10000, () => soclessTabs().some((t) => t.label === DEEP_TITLE));
+    await poll(`the Socle tab titled "${DEEP_TITLE}"`, 10000, () => socleTabs().some((t) => t.label === DEEP_TITLE));
     // The Hierarchy view gets the design from the UI in the panel.
     const hier = await poll('the Hierarchy view showing DeepSoc > cluster0', 60000, async () => {
       const h = (await views()).hierarchy;
@@ -346,7 +346,7 @@ async function run() {
   // A click on cluster0 in the Hierarchy view drills the schematic there (checked by the driver in the
   // webview: the breadcrumb ends in cluster0).
   await step('7b. Hierarchy click drills the schematic', async () => {
-    const runDir = process.env.SOCLESS_E2E_DIR;
+    const runDir = process.env.SOCLE_E2E_DIR;
     await poll('state-ready.json from webview-click.mjs', 30000, () => fs.existsSync(path.join(runDir, 'state-ready.json')));
     const row = (await views()).hierarchy.find((r) => r.depth === 1 && r.label === CLICK_INST);
     if (!row || !row.command) throw new Error(`no Hierarchy row with a command for ${CLICK_INST}`);
@@ -362,7 +362,7 @@ async function run() {
   // The panel's page is set once per server URL: a second View design or Show design panel must not
   // reload the iframe. The driver opened the bottom panel after step 7, step 7b drilled into cluster0.
   await step('8. UI state survives View design and Show design panel', async () => {
-    const runDir = process.env.SOCLESS_E2E_DIR;
+    const runDir = process.env.SOCLE_E2E_DIR;
     const deepUri = vscode.Uri.file(path.join(root(), DEEP_SPEC_FILE));
     await openEditor(DEEP_SPEC_FILE);
     const lens = await viewDesignLens(deepUri, DEEP_SPEC_FILE, (l) => l.range.start.line === DEEP_TEST_LINE);
@@ -372,7 +372,7 @@ async function run() {
       const s = (await getJson(url + 'ide.json')).status;
       return s !== 'running' && s !== 'error';
     }, 1000);
-    await vscode.commands.executeCommand('socless.showPanel');
+    await vscode.commands.executeCommand('socle.showPanel');
     await sleep(3000); // a reload (and the live poll of the new design) would land here
     const resultFile = path.join(runDir, 'state-result.json');
     fs.writeFileSync(path.join(runDir, 'state-request.json'), '{}');
@@ -384,7 +384,7 @@ async function run() {
 
   // Live theme switch: the webview page's script forwards VS Code's new theme kind to the UI.
   await step('9. the webview UI follows a VS Code theme change', async () => {
-    const runDir = process.env.SOCLESS_E2E_DIR;
+    const runDir = process.env.SOCLE_E2E_DIR;
     const from = vscode.window.activeColorTheme.kind;
     const [name, kind] = from === 1 ? ['Default Dark Modern', 2] : ['Default Light Modern', 1];
     await vscode.workspace.getConfiguration('workbench').update('colorTheme', name, vscode.ConfigurationTarget.Global);
@@ -401,13 +401,13 @@ async function run() {
     log(`      ${res.message}`);
   });
 
-  // Simulate with socless.waveViewer = surfer-panel: the server captures and simulates GCD
+  // Simulate with socle.waveViewer = surfer-panel: the server captures and simulates GCD
   // (Verilator) and sets the trace in ide.json; the panel's UI opens Surfer in its own editor tab
   // and drives it there. The driver checks both webviews over CDP (wave-request-<n>.json ops).
   const wave = {};
   await step('10. Simulate opens Surfer in its own tab, beside the panel', async () => {
-    // A user setting: VS Code's client sends the `socless` section in didChangeConfiguration.
-    await vscode.workspace.getConfiguration('socless').update('waveViewer', 'surfer-panel', vscode.ConfigurationTarget.Global);
+    // A user setting: VS Code's client sends the `socle` section in didChangeConfiguration.
+    await vscode.workspace.getConfiguration('socle').update('waveViewer', 'surfer-panel', vscode.ConfigurationTarget.Global);
     await poll('ide.json waveViewer == surfer-panel', 30000, async () => (await getJson(url + 'ide.json')).waveViewer === 'surfer-panel');
     await openEditor(SPEC_FILE);
     const sim = await poll('a "Simulate" code lens on ' + SPEC_FILE, 60000, async () => {
@@ -422,7 +422,7 @@ async function run() {
       return j.trace && j.traceTest === traceTest && j.status !== 'simulating' && j;
     }, 2000);
     log(`      trace ${ide.trace} (${ide.status}: ${ide.message})`);
-    await poll(`the SoCLess tab titled "${GCD_TITLE}"`, 10000, () => soclessTabs().some((t) => t.label === GCD_TITLE));
+    await poll(`the Socle tab titled "${GCD_TITLE}"`, 10000, () => socleTabs().some((t) => t.label === GCD_TITLE));
     const names = await getJson(url + ide.trace.replace(/^\//, '').replace(/\/trace$/, '/names'));
     log(`      trace prefix ${names.prefix}, ${names.names.length} names`);
     Object.assign(wave, { trace: ide.trace, prefix: names.prefix });
@@ -467,10 +467,10 @@ async function run() {
   // editor, the Surfer tab. The lens is read first, as opening its file would change the active editor.
   await step('10e. View design with the Surfer tab active keeps the panel in its column', async () => {
     const lens = await viewDesignLens(specUri);
-    const panel0 = soclessTabs()[0].group;
+    const panel0 = socleTabs()[0].group;
     await activateSurfer();
     const active = vscode.window.tabGroups.activeTabGroup.activeTab;
-    if (!isWebview(active, 'socless.surfer')) throw new Error(`the active tab is "${active && active.label}", not the Surfer tab`);
+    if (!isWebview(active, 'socle.surfer')) throw new Error(`the active tab is "${active && active.label}", not the Surfer tab`);
     log(`      before: ${groupsText()} (active: ${active.label})`);
     // The view's completion: the stamp moves past the one read just before the lens and the
     // status is no longer running (a fast view can be over before a poll ever sees `running`).
@@ -483,8 +483,8 @@ async function run() {
     if (done.status === 'error') throw new Error(`the view failed: ${done.message}`);
     await sleep(3000); // Panel.show (the server's openPanel) lands here
     log(`      after:  ${groupsText()}`);
-    const p = soclessTabs();
-    if (p.length !== 1) throw new Error(`expected one SoCLess tab, found ${p.length}`);
+    const p = socleTabs();
+    if (p.length !== 1) throw new Error(`expected one Socle tab, found ${p.length}`);
     if (p[0].label !== GCD_TITLE) throw new Error(`panel title "${p[0].label}", expected "${GCD_TITLE}"`);
     if (p[0].group !== panel0) throw new Error(`the panel moved: column ${panel0.viewColumn} -> ${p[0].group.viewColumn}`);
     apart();
@@ -495,7 +495,7 @@ async function run() {
     await vscode.window.tabGroups.close(surferTab());
     await poll('the Surfer tab to close', 10000, () => surferTabs().length === 0);
     await sleep(1000);
-    await vscode.commands.executeCommand('socless.showWaves');
+    await vscode.commands.executeCommand('socle.showWaves');
     await poll(`the Surfer tab "${SURFER_TITLE}" back`, 30000, () => surferTabs().some((t) => t.label === SURFER_TITLE));
     log(`      editor groups ${groupsText()}`);
     apart();
@@ -503,11 +503,11 @@ async function run() {
   });
 
   await step('10g. closed panel and tab come back on Show waveforms', async () => {
-    await vscode.window.tabGroups.close([...surferTabs(), ...soclessTabs()]);
-    await poll('the panel and the Surfer tab to close', 10000, () => surferTabs().length === 0 && soclessTabs().length === 0);
+    await vscode.window.tabGroups.close([...surferTabs(), ...socleTabs()]);
+    await poll('the panel and the Surfer tab to close', 10000, () => surferTabs().length === 0 && socleTabs().length === 0);
     await sleep(1000);
-    await vscode.commands.executeCommand('socless.showWaves');
-    await poll('the SoCLess panel back', 30000, () => soclessTabs().some((t) => t.label === GCD_TITLE));
+    await vscode.commands.executeCommand('socle.showWaves');
+    await poll('the Socle panel back', 30000, () => socleTabs().some((t) => t.label === GCD_TITLE));
     await poll(`the Surfer tab "${SURFER_TITLE}" back`, 30000, () => surferTabs().some((t) => t.label === SURFER_TITLE));
     await sleep(2000);
     log(`      editor groups ${groupsText()}`);

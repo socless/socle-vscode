@@ -1,8 +1,8 @@
-package socless.vscode
+package socle.vscode
 
 import scala.scalajs.js
 
-/** The side panel's pure model: the `socless/tests` and `socless-state`
+/** The side panel's pure model: the `socle/tests` and `socle-state`
   * payloads, per-test run states and the rows of the three trees (Tests,
   * Hierarchy, Details). No `vscode` import, so it runs under plain Node in tests;
   * [[Sidebar]] turns rows into VS Code tree items.
@@ -33,7 +33,7 @@ object SidebarModel {
   final case class TestInfo(name: String, line: Int)
   final case class SuiteInfo(suite: String, file: String, tests: Seq[TestInfo])
 
-  /** The `socless/tests` result: `{suites: [{suite, file, tests: [{name, line}]}]}`. */
+  /** The `socle/tests` result: `{suites: [{suite, file, tests: [{name, line}]}]}`. */
   def parseTests(result: js.Any): Seq[SuiteInfo] =
     obj(result).flatMap(o => arr(o.suites)).getOrElse(Nil).flatMap { s =>
       for {
@@ -65,7 +65,7 @@ object SidebarModel {
   case object Simulating extends RunState
   case object Failed     extends RunState
 
-  /** Per-test run state from the server's `socless/status` (status, suite,
+  /** Per-test run state from the server's `socle/status` (status, suite,
     * test) and the extension's own View design commands. */
   final class RunTracker {
     private var shown      = Option.empty[TestKey] // whose design the panel shows
@@ -143,9 +143,9 @@ object SidebarModel {
   /** The Tests view's problem for a language client state (vscode-languageclient: 1 Stopped,
     * 2 Running, 3 Starting): None unless the server stopped. */
   def serverProblem(clientState: Int): Option[String] =
-    Option.when(clientState == 1)("The SoCLess language server is not running. Reload the window to restart it.")
+    Option.when(clientState == 1)("The Socle language server is not running. Reload the window to restart it.")
 
-  // ── socless-state (from the UI in the panel) ───────────────────────────────
+  // ── socle-state (from the UI in the panel) ───────────────────────────────
 
   final case class SourceInfo(file: String, line: Int)
   final case class ModuleInfo(name: String, scalaClass: String, kind: String, source: Option[SourceInfo],
@@ -172,12 +172,12 @@ object SidebarModel {
       for (p <- str(x.selectDynamic(a)); q <- str(x.selectDynamic(b)); r <- str(x.selectDynamic(c))) yield (p, q, r)
     })
 
-  /** A `{type: "socless-state", design?, path, selection, details}` message (no
+  /** A `{type: "socle-state", design?, path, selection, details}` message (no
     * `design` key: unchanged since the last message), or
     * None when it is not one (wrong type, path not an array of strings, a
     * selection neither null nor a string, a design or details of the wrong shape). */
   def parseUiState(msg: js.Any): Option[UiState] =
-    obj(msg).filter(o => str(o.`type`).contains("socless-state")).flatMap { o =>
+    obj(msg).filter(o => str(o.`type`).contains("socle-state")).flatMap { o =>
       val path = arr(o.path).filter(_.forall(p => js.typeOf(p) == "string")).map(_.map(_.asInstanceOf[String]).toList)
       val design: Option[Option[Option[DesignInfo]]] =
         if (js.isUndefined(o.design)) Some(None)
@@ -274,6 +274,6 @@ object SidebarModel {
 
   /** The message the extension posts to the panel page, relayed to the UI. */
   def navigateMessage(path: List[String], select: Option[String]): js.Any =
-    js.Dynamic.literal(`type` = "socless-navigate", path = js.Array(path: _*),
+    js.Dynamic.literal(`type` = "socle-navigate", path = js.Array(path: _*),
       select = select.fold[js.Any](null)(s => s))
 }
