@@ -57,8 +57,9 @@ It is not run in CI.
   vsix and publishes it as a GitHub release, then on the
   [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=socless.socle)
   and on [Open VSX](https://open-vsx.org/extension/socless/socle) (for VSCodium), both under the
-  `socless` publisher. Those two need repository secrets: `VSCE_PAT` (an Azure DevOps token with
-  the Marketplace "Manage" scope) and `OVSX_PAT` (an Open VSX access token). To cut one:
+  `socless` publisher. Both use trusted publishing (OIDC), so no token is stored: the Marketplace
+  publisher `socless` and the Open VSX namespace `socless` each trust this repository's
+  `release.yml` (no environment). To cut one:
   1. Set `V.publishVer` to the version.
   2. Add the `## [<version>]` section to `CHANGELOG.md`.
   3. Commit, push, then tag `v<version>` (signed) and push the tag.
