@@ -8,6 +8,10 @@ with Socle itself (see the [Socle changelog](https://github.com/socless/socle/bl
 
 ## [Unreleased]
 
+## [0.25.0] - 2026-11-02
+
+Bundles the language server of Socle 0.23.0. The first release on the Visual Studio Marketplace.
+
 ### Changed
 
 - The extension's ID is now `socless.socle` (publisher `socless`, was `socle`), the ID it has on
