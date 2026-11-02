@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 # End-to-end check of the staged Socle extension in a headless VS Code.
 #
-#   ./mill socle-vscode.stage
-#   socle-vscode/e2e/run.sh out/socle-vscode/stage.dest
+#   ./mill stage
+#   SOCLE_ROOT=/path/to/socle e2e/run.sh out/stage.dest
 #
+# The workspace VS Code opens is a Socle checkout (SOCLE_ROOT): its `example/` project holds the
+# ChiselSim tests the steps view and simulate. Use a scratch clone at the pinned release's tag
+# (`git clone --branch v<V.socle> git@github.com:socless/socle.git`), not one you work in: the
+# language server runs Mill there and writes its `out/`.
 # Not a Mill command on purpose: the language server inside VS Code runs `mill --no-daemon`
-# on this repo, which would contend with a Mill process running the test.
+# on that checkout, which would contend with a Mill process running the test.
 # The exit code is VS Code's: 0 when every step of index.js passed.
 # VS Code gets a remote debugging port so webview-click.mjs (run in the background) can drive the
 # webviews (the Socle panel, the Surfer tab) for steps 7 to 10; the screenshots and the driver's
@@ -19,7 +23,7 @@ if [[ $# -ne 1 ]]; then
 fi
 stage=$(cd "$1" && pwd)
 e2e=$(cd "$(dirname "$0")" && pwd)
-repo=$(cd "$e2e/../.." && pwd)
+repo=$(cd "${SOCLE_ROOT:?set SOCLE_ROOT to a Socle checkout (see the header)}" && pwd)
 
 # The VS Code Electron binary itself, not the `code` CLI: the CLI starts VS Code detached and
 # exits 0 at once, so its exit code would not be the test result.

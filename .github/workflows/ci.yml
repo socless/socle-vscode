@@ -1,0 +1,44 @@
+name: CI
+
+# Pull requests, and by hand (Actions, CI, Run workflow).
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+# The unit tests only. Building the vsix downloads the pinned Socle release,
+# which this repository's token cannot read while socless/socle is private:
+# check it locally (`./mill vsix`, see DEVELOPING.md) until then.
+jobs:
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # The Scala.js tests run on Node.
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Cache Mill / Coursier / Ivy caches
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cache/coursier
+            ~/.mill
+            ~/.ivy2
+          key: mill-${{ runner.os }}-${{ hashFiles('build.mill') }}
+
+      - name: Unit tests
+        run: ./mill test

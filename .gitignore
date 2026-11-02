@@ -1,0 +1,7 @@
+out/
+.bsp/
+.metals/
+.bloop/
+node_modules/
+mill.*.lock
+.idea/

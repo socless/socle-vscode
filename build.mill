@@ -1,0 +1,150 @@
+//| mill-version: 1.1.6
+//
+// Socle for VS Code - Mill 1.1.6.
+//
+// The extension is Scala.js (CommonJS). Its vsix bundles the Socle language
+// server jar of the Socle release it pins (`V.socle`), downloaded from that
+// release and checked against `V.socleLspSha256`.
+//
+//   ./mill test     # unit tests, on Node
+//   ./mill stage    # the extension directory (what the e2e loads)
+//   ./mill vsix     # out/vsix.dest/socle-<version>.vsix
+
+package build
+
+import mill._
+import mill.scalalib._
+import mill.scalajslib._
+import mill.scalajslib.api.{JsEnvConfig, ModuleKind}
+
+object V {
+  val scala     = "2.13.16"
+  val scalaJs   = "1.19.0"
+  val utest     = "0.8.5"
+  val vscodeLanguageClient = "9.0.1"  // npm, staged into the extension at packaging
+  val vsce      = "3.2.1"             // @vscode/vsce, packages the extension
+  val publishVer = "0.23.0-SNAPSHOT"
+  /** The Socle release whose language server the vsix bundles. */
+  val socle     = "0.22.0"
+  /** sha256 of that release's `socle-lsp-<socle>.jar` (its SHA256SUMS). Bump with `socle`. */
+  val socleLspSha256 = "00a87b04b681f38a8860445092bfad595c329aee223ac80a28d15a9d0cd01a95"
+  val socleRepo = "socless/socle"
+}
+
+object `package` extends ScalaJSModule {
+  def scalaVersion   = V.scala
+  def scalaJSVersion = V.scalaJs
+  def moduleKind     = ModuleKind.CommonJSModule
+
+  def packageJsonTemplate = Task.Source("package.json")
+
+  /** The extension's package.json, rendered from the template with versions from V.
+    *
+    * `@VERSION@` is V.publishVer as semver (`-SNAPSHOT` becomes `-snapshot`),
+    * `@VSCODE_LANGUAGECLIENT@` is V.vscodeLanguageClient. Writes `package.json` in its dest.
+    */
+  def packageJson = Task {
+    val text = os.read(packageJsonTemplate().path)
+      .replace("@VERSION@", extVersion)
+      .replace("@VSCODE_LANGUAGECLIENT@", V.vscodeLanguageClient)
+    os.write(Task.dest / "package.json", text)
+    PathRef(Task.dest / "package.json")
+  }
+
+  def readme  = Task.Source("README.md")
+  def license = Task.Source("LICENSE")
+  /** Static files the manifest names (the activity bar icon), staged as `media/`. */
+  def media   = Task.Source("media")
+
+  private def extVersion = V.publishVer.replace("-SNAPSHOT", "-snapshot")
+
+  // Runs a tool in `dir`; on failure the Mill error carries its output.
+  private def runTool(dir: os.Path, cmd: String*): Unit = {
+    val r = os.proc(cmd).call(cwd = dir, stdout = os.Pipe, stderr = os.Pipe, check = false)
+    if (r.exitCode != 0)
+      sys.error(s"${cmd.mkString(" ")} failed (exit ${r.exitCode})\n${r.out.text()}\n${r.err.text()}")
+  }
+
+  private def sha256(p: os.Path): String =
+    java.security.MessageDigest.getInstance("SHA-256").digest(os.read.bytes(p)).map("%02x".format(_)).mkString
+
+  /** A local language server jar to bundle instead of the pinned release's
+    * (`SOCLE_LSP_JAR`), to try a server that is not released yet. */
+  def serverJarOverride = Task.Input { sys.env.get("SOCLE_LSP_JAR").filter(_.nonEmpty) }
+
+  /** The language server jar the vsix bundles: `SOCLE_LSP_JAR` when set, else
+    * `socle-lsp-<V.socle>.jar` from the pinned release, by HTTPS or, while the
+    * repository is private, `gh release download`; its sha256 must be
+    * V.socleLspSha256.
+    */
+  def serverJar = Task {
+    val out = Task.dest / "socle-lsp.jar"
+    serverJarOverride() match {
+      case Some(p) =>
+        os.copy(os.Path(p, os.pwd), out)
+        Task.log.info(s"bundling the local server jar $p (SOCLE_LSP_JAR)")
+      case None =>
+        val name = s"socle-lsp-${V.socle}.jar"
+        val url  = s"https://github.com/${V.socleRepo}/releases/download/v${V.socle}/$name"
+        val viaHttps = scala.util.Try(requests.get(url, readTimeout = 120000, check = true)).toOption
+        viaHttps match {
+          case Some(r) => os.write(out, r.bytes)
+          case None =>
+            runTool(Task.dest, "gh", "release", "download", s"v${V.socle}", "--repo", V.socleRepo,
+              "--pattern", name, "--dir", Task.dest.toString, "--clobber")
+            os.move(Task.dest / name, out)
+        }
+        val got = sha256(out)
+        if (got != V.socleLspSha256)
+          sys.error(s"$name: sha256 $got, expected ${V.socleLspSha256} (V.socleLspSha256)")
+    }
+    PathRef(out)
+  }
+
+  /** The extension directory: `out/extension.js`, `server/socle-lsp.jar`, `package.json`, `media/`, README, LICENSE, `node_modules`.
+    *
+    * Copies the linked JS and the server jar, then runs `npm install --omit=dev` for
+    * `vscode-languageclient`. This directory is what the e2e loads as `--extensionDevelopmentPath`.
+    * Needs network on the first run (npm cache afterwards).
+    */
+  def stage = Task {
+    val d = Task.dest
+    os.copy(fullLinkJS().dest.path / "main.js", d / "out" / "extension.js", createFolders = true)
+    os.copy(serverJar().path, d / "server" / "socle-lsp.jar", createFolders = true)
+    os.copy(packageJson().path, d / "package.json")
+    os.copy(readme().path, d / "README.md")
+    os.copy(license().path, d / "LICENSE")
+    os.copy(media().path, d / "media")
+    // Package only the runtime files, whatever else lands in the stage.
+    os.write(d / ".vscodeignore", ".vscodeignore\npackage-lock.json\n")
+    runTool(d, "npm", "install", "--omit=dev", "--no-audit", "--no-fund")
+    PathRef(d)
+  }
+
+  /** The installable extension: `socle-<version>.vsix`, packaged with vsce from a copy of the stage.
+    *
+    * Needs network on the first run (npx fetches @vscode/vsce).
+    */
+  def vsix = Task {
+    val work = Task.dest / "work"
+    os.copy(stage().path, work, createFolders = true)
+    val out = Task.dest / s"socle-$extVersion.vsix"
+    runTool(work, "npx", "--yes", s"@vscode/vsce@${V.vsce}", "package", "--out", out.toString)
+    PathRef(out)
+  }
+
+  object test extends ScalaJSTests with TestModule.Utest {
+    def mvnDeps = super.mvnDeps() ++ Seq(mvn"com.lihaoyi::utest::${V.utest}")
+
+    /** Empty `vscode` and `vscode-languageclient/node` modules so the test bundle loads under plain Node.
+      *
+      * The top-level exports keep the facades reachable, so the bundle `require`s them; tests never use them.
+      */
+    def nodeStubs = Task {
+      os.write(Task.dest / "vscode" / "index.js", "module.exports = {};\n", createFolders = true)
+      os.write(Task.dest / "vscode-languageclient" / "node.js", "module.exports = {};\n", createFolders = true)
+      PathRef(Task.dest)
+    }
+    def jsEnvConfig = Task { JsEnvConfig.NodeJs(env = Map("NODE_PATH" -> nodeStubs().path.toString)) }
+  }
+}

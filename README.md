@@ -27,6 +27,8 @@ in the server jar (`surfer/LICENSE-EUPL-1.2.txt`, `surfer/SOURCE.md`).
 
 ## Install the vsix
 
-Build it with `./mill socle-vscode.vsix`, then either run
-`code --install-extension out/socle-vscode/vsix.dest/socle-<version>.vsix`
-or use "Extensions: Install from VSIX..." in VS Code.
+Download `socle-<version>.vsix` from the
+[releases page](https://github.com/socless/socle-vscode/releases), then either run
+`code --install-extension socle-<version>.vsix` or use "Extensions: Install from VSIX..." in
+VS Code. Each release bundles the language server of one Socle release (named in its notes).
+To build it yourself, see [DEVELOPING.md](DEVELOPING.md).
