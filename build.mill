@@ -73,8 +73,8 @@ object `package` extends ScalaJSModule {
   def serverJarOverride = Task.Input { sys.env.get("SOCLE_LSP_JAR").filter(_.nonEmpty) }
 
   /** The language server jar the vsix bundles: `SOCLE_LSP_JAR` when set, else
-    * `socle-lsp-<V.socle>.jar` from the pinned release, by HTTPS or, while the
-    * repository is private, `gh release download`; its sha256 must be
+    * `socle-lsp-<V.socle>.jar` from the pinned release, by HTTPS or, when that
+    * fails, `gh release download`; its sha256 must be
     * V.socleLspSha256.
     */
   def serverJar = Task {

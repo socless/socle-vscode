@@ -9,9 +9,8 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
-# The unit tests only. Building the vsix downloads the pinned Socle release,
-# which this repository's token cannot read while socless/socle is private:
-# check it locally (`./mill vsix`, see DEVELOPING.md) until then.
+# The unit tests, then the vsix (it downloads the pinned Socle release's server
+# jar and checks its sha256).
 jobs:
   unit:
     name: Unit tests
@@ -42,3 +41,6 @@ jobs:
 
       - name: Unit tests
         run: ./mill test
+
+      - name: Build the vsix
+        run: ./mill vsix
