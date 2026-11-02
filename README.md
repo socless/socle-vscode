@@ -25,11 +25,16 @@ built to WebAssembly, for the panel's Waveform tab. Surfer is a separate work
 licensed under the EUPL-1.2; its licence text and source pointer ship beside it
 in the server jar (`surfer/LICENSE-EUPL-1.2.txt`, `surfer/SOURCE.md`).
 
-## Install the vsix
+## Install
 
-Download `socle-<version>.vsix` from the
-[releases page](https://github.com/socless/socle-vscode/releases), then either run
-`code --install-extension socle-<version>.vsix` or use "Extensions: Install from VSIX..." in
+Search for "Socle" in the Extensions view, or install `socless.socle`:
+
+- VS Code: from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=socless.socle).
+- VSCodium and other editors using Open VSX: from [Open VSX](https://open-vsx.org/extension/socless/socle).
+
+Each release's vsix is also on the
+[releases page](https://github.com/socless/socle-vscode/releases): install it with
+`code --install-extension socle-<version>.vsix` or "Extensions: Install from VSIX..." in
 VS Code. Each release bundles the language server of one Socle release (named in its notes).
 To build it yourself, see [DEVELOPING.md](DEVELOPING.md).
 

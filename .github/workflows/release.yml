@@ -1,7 +1,9 @@
 name: Release
 
 # A pushed `v*` tag checks the version and the release notes, builds the vsix
-# (bundling the pinned Socle server) and publishes it as a GitHub release. A
+# (bundling the pinned Socle server), publishes it as a GitHub release, then on
+# the Visual Studio Marketplace (VSCE_PAT secret) and on Open VSX (OVSX_PAT
+# secret); a registry whose secret is missing is skipped with a warning. A
 # manual dispatch only checks and builds.
 on:
   push:
@@ -50,3 +52,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
         run: gh release create "$TAG" out/vsix.dest/*.vsix --title "Socle for VS Code ${TAG#v}" --notes-file notes.md
+
+      - name: Publish on the Visual Studio Marketplace
+        if: github.ref_type == 'tag'
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          if [ -z "$VSCE_PAT" ]; then echo "::warning::no VSCE_PAT secret: not published on the Visual Studio Marketplace"; exit 0; fi
+          vsce=$(grep -oP 'val vsce\s*=\s*"\K[^"]+' build.mill)
+          npx --yes "@vscode/vsce@$vsce" publish --packagePath out/vsix.dest/*.vsix
+
+      - name: Publish on Open VSX
+        if: github.ref_type == 'tag'
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: |
+          if [ -z "$OVSX_PAT" ]; then echo "::warning::no OVSX_PAT secret: not published on Open VSX"; exit 0; fi
+          npx --yes ovsx@0.10.1 publish out/vsix.dest/*.vsix

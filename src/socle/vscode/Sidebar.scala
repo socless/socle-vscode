@@ -219,7 +219,7 @@ object Sidebar {
     register("socle.simulateItem", ((el: js.Any) => runOnItem("socle.simulate", el)): js.Function1[js.Any, Unit])
     register("socle.refreshTests", (() => fetchTests()): js.Function0[Unit])
     register("socle.openSettings",
-      (() => ignore(commands.executeCommand("workbench.action.openSettings", "@ext:socle.socle"))): js.Function0[Unit])
+      (() => ignore(commands.executeCommand("workbench.action.openSettings", "@ext:socless.socle"))): js.Function0[Unit])
     register("socle._openTest",
       ((file: String, line: Int) => openAt(Uri.parse(file), line, preserveFocus = false)): js.Function2[String, Int, Unit])
     register("socle._openHierarchy", ((path: js.Any) => openHierarchy(path)): js.Function1[js.Any, Unit])
