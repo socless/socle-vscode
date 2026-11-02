@@ -8,6 +8,12 @@ with Socle itself (see the [Socle changelog](https://github.com/socless/socle/bl
 
 ## [Unreleased]
 
+### Changed
+
+- The extension's ID is now `socless.socle` (publisher `socless`, was `socle`), the ID it has on
+  the Visual Studio Marketplace and on Open VSX. A vsix installed by hand under the old ID is a
+  separate extension: uninstall it.
+
 ## [0.24.0] - 2026-11-02
 
 Bundles the language server of Socle 0.23.0.

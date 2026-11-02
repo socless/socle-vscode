@@ -2,18 +2,22 @@
   "name": "socle",
   "displayName": "Socle (Chisel)",
   "description": "Live schematic view of Chisel designs, linked to the source.",
-  "publisher": "socle",
+  "publisher": "socless",
   "version": "@VERSION@",
   "license": "AGPL-3.0-only",
   "icon": "media/icon.png",
+  "galleryBanner": { "color": "#16202b", "theme": "dark" },
   "repository": {
     "type": "git",
     "url": "https://github.com/socless/socle-vscode"
   },
+  "homepage": "https://github.com/socless/socle",
+  "bugs": { "url": "https://github.com/socless/socle-vscode/issues" },
   "engines": {
     "vscode": "^1.90.0"
   },
   "categories": ["Programming Languages", "Visualization"],
+  "keywords": ["chisel", "scala", "hardware", "rtl", "schematic", "fpga", "asic", "waveform", "surfer", "mill"],
   "main": "./out/extension.js",
   "activationEvents": ["onLanguage:scala"],
   "capabilities": {
