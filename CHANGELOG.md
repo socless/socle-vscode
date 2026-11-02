@@ -8,6 +8,10 @@ with Socle itself (see the [Socle changelog](https://github.com/socless/socle/bl
 
 ## [Unreleased]
 
+### Changed
+
+- The extension is now licensed under the GNU AGPL-3.0, like Socle (was MIT).
+
 ## [0.23.0] - 2026-11-02
 
 Bundles the language server of Socle 0.22.0.

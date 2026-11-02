@@ -32,3 +32,10 @@ Download `socle-<version>.vsix` from the
 `code --install-extension socle-<version>.vsix` or use "Extensions: Install from VSIX..." in
 VS Code. Each release bundles the language server of one Socle release (named in its notes).
 To build it yourself, see [DEVELOPING.md](DEVELOPING.md).
+
+## License
+
+Copyright (C) 2026 Iban Guinebert. Licensed under the GNU AGPL-3.0-only, like Socle: see the
+LICENSE file and Socle's [LICENSING.md](https://github.com/socless/socle/blob/main/LICENSING.md),
+which also covers the commercial licence. The bundled language server carries its own notices
+(`socle-legal/` in the jar), and the extension ships `vscode-languageclient` (MIT).

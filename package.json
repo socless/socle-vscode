@@ -4,7 +4,7 @@
   "description": "Live schematic view of Chisel designs, linked to the source.",
   "publisher": "socle",
   "version": "@VERSION@",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "icon": "media/icon.png",
   "repository": {
     "type": "git",
