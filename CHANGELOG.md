@@ -8,6 +8,10 @@ with Socle itself (see the [Socle changelog](https://github.com/socless/socle/bl
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-11-02
+
+Bundles the language server of Socle 0.22.0.
+
 ### Changed
 
 - The extension has its own repository (socless/socle-vscode) and its own
