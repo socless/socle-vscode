@@ -59,7 +59,8 @@ It is not run in CI.
   and on [Open VSX](https://open-vsx.org/extension/socless/socle) (for VSCodium), both under the
   `socless` publisher. Both use trusted publishing (OIDC), so no token is stored: the Marketplace
   publisher `socless` and the Open VSX namespace `socless` each trust this repository's
-  `release.yml` (no environment). To cut one:
+  `release.yml` (no environment). Open VSX is published only when the repository variable
+  `OPENVSX_PUBLISH` is `true`. To cut one:
   1. Set `V.publishVer` to the version.
   2. Add the `## [<version>]` section to `CHANGELOG.md`.
   3. Commit, push, then tag `v<version>` (signed) and push the tag.
