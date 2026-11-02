@@ -8,9 +8,15 @@ with Socle itself (see the [Socle changelog](https://github.com/socless/socle/bl
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-11-02
+
+Bundles the language server of Socle 0.23.0.
+
 ### Changed
 
 - The extension is now licensed under the GNU AGPL-3.0, like Socle (was MIT).
+- The bundled server's embedded Surfer no longer carries the builder's local paths. The
+  0.23.0 vsix, which did, is removed from its release.
 
 ## [0.23.0] - 2026-11-02
 
