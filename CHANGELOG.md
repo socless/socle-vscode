@@ -8,9 +8,13 @@ with Socle itself (see the [Socle changelog](https://github.com/socless/socle/bl
 
 ## [Unreleased]
 
+## [0.26.0] - 2026-11-04
+
+Bundles the language server of Socle 0.24.0.
+
 ### Changed
 
-- Bundles the language server of Socle 0.24.0: I/O tag names in the zoomed-out overview,
+- The bundled server, from Socle 0.24.0, brings I/O tag names in the zoomed-out overview,
   faster exports of large designs, I/O tags kept in their columns, and the same layout from
   one JVM to the next.
 
