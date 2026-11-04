@@ -8,6 +8,12 @@ with Socle itself (see the [Socle changelog](https://github.com/socless/socle/bl
 
 ## [Unreleased]
 
+### Changed
+
+- Bundles the language server of Socle 0.24.0: I/O tag names in the zoomed-out overview,
+  faster exports of large designs, I/O tags kept in their columns, and the same layout from
+  one JVM to the next.
+
 ## [0.25.0] - 2026-11-02
 
 Bundles the language server of Socle 0.23.0. The first release on the Visual Studio Marketplace.
