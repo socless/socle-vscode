@@ -8,6 +8,13 @@ with Socle itself (see the [Socle changelog](https://github.com/socless/socle/bl
 
 ## [Unreleased]
 
+### Changed
+
+- The bundled server, from Socle 0.25.0, draws the code's own `when` and `switch` blocks as
+  boxes, colours registers by clock domain, and adds Previous / Next module buttons, a
+  hierarchy tree that follows the open module, and a double-click that opens every module with
+  content.
+
 ## [0.26.0] - 2026-11-04
 
 Bundles the language server of Socle 0.24.0.
