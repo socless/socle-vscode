@@ -8,6 +8,10 @@ with Socle itself (see the [Socle changelog](https://github.com/socless/socle/bl
 
 ## [Unreleased]
 
+## [0.27.0] - 2026-11-06
+
+Bundles the language server of Socle 0.25.0.
+
 ### Changed
 
 - The bundled server, from Socle 0.25.0, draws the code's own `when` and `switch` blocks as
