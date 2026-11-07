@@ -30,6 +30,8 @@ trait LanguageClientOptions extends js.Object {
   val errorHandler: js.UndefOr[ErrorHandler] = js.undefined
   /** `{ configurationSection }`: the client sends that settings section in `workspace/didChangeConfiguration`. */
   val synchronize: js.UndefOr[js.Object] = js.undefined
+  /** `{ window: { showDocument(params, next) } }`: the client's handlers of server requests, overridden. */
+  val middleware: js.UndefOr[js.Object] = js.undefined
 }
 
 /** v9 `ErrorHandler`: each method returns `{ action, message?, handled? }`. */

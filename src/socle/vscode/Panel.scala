@@ -96,10 +96,14 @@ object Panel {
   /** The test of the last view (for the Surfer tab's title). */
   def test: Option[String] = lastTest
 
-  /** The editor column for a source opened from the side panel: the first one, or the one
-    * beside when the panel is there (so the source never covers the panel). */
-  def sourceColumn: Int =
-    if (current.exists(_._1.viewColumn.toOption.contains(1))) ViewColumn.Beside else 1
+  /** The editor column for code opened from the panel or the side bar: a code group, never the
+    * panel's or the Surfer tab's ([[Logic.codeColumn]]). */
+  def sourceColumn: Int = Logic.codeColumn(
+    window.visibleTextEditors.toSeq.flatMap(_.viewColumn.toOption),
+    column,
+    SurferTab.column,
+    window.tabGroups.all.length,
+  )
 
   /** Closes the panel, if any (extension deactivation); its dispose listener cleans up after it. */
   def dispose(): Unit = current.foreach(_._1.dispose())

@@ -21,7 +21,10 @@ object SurferTab {
   private val queue = new SurferQueue(m => current.foreach(_.webview.postMessage(m)))
   private val opens = new SurferOpens
 
-  /** Creates the tab in the column after the Socle panel's (or reveals the existing one where it
+  /** The tab's editor column, when it is open (code opens elsewhere, see [[Panel.sourceColumn]]). */
+  def column: Option[Int] = current.flatMap(_.viewColumn.toOption)
+
+  /** Creates the tab in a group below the Socle panel's (or reveals the existing one where it
     * is) on the server of the panel's last view, titled after `test` (None keeps the last one).
     * Nothing without a view.
     */
@@ -76,13 +79,17 @@ object SurferTab {
   }
 
   private def create(): WebviewPanel = {
+    // With a panel: made focused in the panel's group, then moved to a group below it (a webview
+    // cannot be created below); the editor that had the focus gets it back.
+    val below = Panel.column.isDefined
+    val back  = window.activeTextEditor.toOption
     val panel = window.createWebviewPanel(
       "socle.surfer",
       Logic.surferTitle(lastTest),
-      // After the panel's column, so it never covers the schematic (Beside is the active editor's).
-      js.Dynamic.literal(viewColumn = Logic.surferColumn(Panel.column), preserveFocus = true),
+      js.Dynamic.literal(viewColumn = Logic.surferColumn(Panel.column), preserveFocus = !below),
       js.Dynamic.literal(enableScripts = true, retainContextWhenHidden = true),
     )
+    if (below) moveBelow(panel, back)
     val messages = panel.webview.onDidReceiveMessage { (msg: js.Any) =>
       Logic.route("surfer", msg).foreach { case (_, m) =>
         queue.ready() // the first status: the tab listens, the queued commands go
@@ -102,6 +109,31 @@ object SurferTab {
     page = Some((nonce(), Logic.themeKind(window.activeColorTheme.kind)))
     current = Some(panel)
     panel
+  }
+
+  /** Moves the new `panel` (the tab, in the Socle panel's group) to a group below, once it is the
+    * active editor (the command moves the active one), then refocuses `back` where it now is (the
+    * split renumbers the groups), unless the tab joined its group. Its context is retained: the move does not reload Surfer. */
+  private def moveBelow(panel: WebviewPanel, back: Option[TextEditor]): Unit = {
+    def move(): Unit = {
+      val moved = commands.executeCommand("workbench.action.moveEditorToBelowGroup").`then`[Unit] { (_: js.Any) =>
+        back.foreach { ed =>
+          // Not when the tab moved into that editor's group (a group below already there): it would cover the tab.
+          ed.viewColumn.filterNot(c => panel.viewColumn.contains(c)).foreach { c =>
+            window.showTextDocument(ed.document.uri,
+              js.Dynamic.literal(viewColumn = c, selection = ed.selection, preserveFocus = false))
+          }
+        }
+      }
+      moved.asInstanceOf[js.Dynamic].`catch`((_: js.Any) => ())
+    }
+    if (panel.active) move()
+    else {
+      var sub: Option[Disposable] = None
+      sub = Some(panel.onDidChangeViewState { (_: js.Any) =>
+        if (panel.active) { sub.foreach(_.dispose()); sub = None; move() }
+      })
+    }
   }
 
   /** Closes the tab, if any (extension deactivation). */
