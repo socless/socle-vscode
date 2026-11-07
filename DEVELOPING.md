@@ -49,6 +49,23 @@ SOCLE_ROOT=/tmp/socle e2e/run.sh out/stage.dest
 It needs VS Code (`SOCLE_E2E_ELECTRON` to name its binary), `xvfb-run` and Verilator on the PATH.
 It is not run in CI.
 
+## README screenshots
+
+`docs/media/` holds the README's images, dark and light: the hero GIF (the schematic following the
+cursor through the RV pipeline, a click on a box opening its code, TrafficFsm's state diagram) and
+three stills (schematic, FSM diagram, waveforms). To retake them after a UI change:
+
+```bash
+SOCLE_ROOT=/path/to/socle tools/screenshots.sh
+```
+
+`SOCLE_ROOT` is a scratch Socle clone at the pinned tag, as for the end-to-end test. It stages the
+extension and runs `e2e/shots.sh` once per theme: the same headless VS Code as `e2e/run.sh`, the
+story in `e2e/shots.js`, and `e2e/shots.mjs` clicking in the panel and taking the screenshots over
+CDP. The hero GIF is made from lossless frames (ffmpeg). `tools/check-media.sh` then checks each
+file exists, the stills are 1920 px wide and the GIFs at most 3 MB. Simulate needs Verilator on
+PATH. Commit the new images.
+
 ## CI and releases
 
 - **CI:** runs the unit tests and builds the vsix (bundling the pinned server) on pull requests
