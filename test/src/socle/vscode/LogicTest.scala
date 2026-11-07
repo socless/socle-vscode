@@ -289,6 +289,9 @@ object LogicTest extends TestSuite {
       assert(Logic.codeColumn(Seq(1), panel = Some(1), surfer = None, groups = 1) == 2)
       // no panel: the first code group
       assert(Logic.codeColumn(Seq(1), panel = None, surfer = None, groups = 1) == 1)
+      // no text editor shown: a free group (an empty window, or Settings in group 1) before a new one
+      assert(Logic.codeColumn(Nil, panel = None, surfer = None, groups = 1) == 1)
+      assert(Logic.codeColumn(Nil, panel = Some(2), surfer = Some(3), groups = 3) == 1)
     }
 
     test("panelRevealColumn") {

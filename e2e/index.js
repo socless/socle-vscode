@@ -484,6 +484,22 @@ async function run() {
     await driver('select', wave, 60000);
   });
 
+  // As a click on a box in the panel (the server's showDocument), with the Surfer tab's group active:
+  // the code opens in the code group, neither over the Surfer tab nor over the panel.
+  await step('10c2. code opened from the panel with the Surfer tab active lands in a code group', async () => {
+    await activateSurfer();
+    const file = path.join(root(), GCD_FILE);
+    const r = await request(url + 'open', 'POST', { file: GCD_FILE, line: 24 });
+    if (r.status < 200 || r.status >= 300) throw new Error(`POST /open -> ${r.status} ${r.body}`);
+    await poll(`the active editor on ${GCD_FILE}`, 15000, () => {
+      const e = vscode.window.activeTextEditor;
+      return e && e.document.uri.fsPath === file;
+    });
+    log(`      editor groups ${groupsText()}`);
+    codeApart(file);
+    apart();
+  });
+
   // Moving the tab must not reload its frame (retainContextWhenHidden): the driver compares the frame
   // (target id, a marker set in it, Surfer's boot count) with the one 10b saw.
   await step('10d. moving the Surfer tab to another group keeps Surfer (one boot)', async () => {

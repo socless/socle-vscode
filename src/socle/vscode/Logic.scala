@@ -117,9 +117,13 @@ object Logic {
   /** The column code opens in from the panel (a click on a box or a wire) or the side bar, so it
     * never covers the schematic or the waveforms: the first group showing a text editor
     * (`textColumns`) that is neither the Socle panel's (`panel`) nor the Surfer tab's (`surfer`),
-    * else a new group after the last of the `groups` ones. */
-  def codeColumn(textColumns: Seq[Int], panel: Option[Int], surfer: Option[Int], groups: Int): Int =
-    textColumns.filterNot(c => panel.contains(c) || surfer.contains(c)).sorted.headOption.getOrElse(groups + 1)
+    * else the first other of the `groups` ones (an empty window, Settings), else a new group. */
+  def codeColumn(textColumns: Seq[Int], panel: Option[Int], surfer: Option[Int], groups: Int): Int = {
+    val free = (c: Int) => !panel.contains(c) && !surfer.contains(c)
+    textColumns.filter(free).sorted.headOption
+      .orElse((1 to groups).find(free))
+      .getOrElse(groups + 1)
+  }
 
   /** The column `Panel.show` reveals the Socle panel in: its own (`existing`), so it never moves
     * (Beside is relative to the active editor, which may be the Surfer tab); beside the active editor
