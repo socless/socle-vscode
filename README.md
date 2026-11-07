@@ -5,11 +5,34 @@ design in a panel beside the editor, and the schematic follows your cursor. The 
 (activity bar) lists the workspace's tests (View design and Simulate on each), the design's instance
 hierarchy and the details of the selection.
 
+<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/socless/socle-vscode/main/docs/media/hero-dark.gif">
+  <img src="https://raw.githubusercontent.com/socless/socle-vscode/main/docs/media/hero-light.gif" alt="Socle in VS Code: the schematic follows the cursor through a RISC-V pipeline, a click on a box opens its code, and a state machine opens on its diagram">
+</picture>
+</p>
+
 ## Requirements
 
 - Java 21 or newer (set `socle.javaPath` if `java` on your PATH is older).
 - A Mill project that contains the Chisel design.
 - ChiselSim tests: the lens runs the test and captures the design it elaborates.
+
+<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/socless/socle-vscode/main/docs/media/schematic-dark.png">
+  <img src="https://raw.githubusercontent.com/socless/socle-vscode/main/docs/media/schematic-light.png" alt="The cursor in class Exec: the panel focuses the exec stage of the pipeline" width="32%">
+</picture>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/socless/socle-vscode/main/docs/media/fsm-dark.png">
+  <img src="https://raw.githubusercontent.com/socless/socle-vscode/main/docs/media/fsm-light.png" alt="TrafficFsm.scala beside its state diagram" width="32%">
+</picture>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/socless/socle-vscode/main/docs/media/waves-dark.png">
+  <img src="https://raw.githubusercontent.com/socless/socle-vscode/main/docs/media/waves-light.png" alt="After Simulate: Surfer beside the panel, following the selected stage" width="32%">
+</picture>
+</p>
+<p align="center"><sub>The schematic follows your cursor · a state machine's diagram · waveforms that follow the selection</sub></p>
 
 ## Settings
 
