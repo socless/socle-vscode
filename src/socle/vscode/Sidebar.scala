@@ -169,7 +169,7 @@ object Sidebar {
     } v.reveal(e, js.Dynamic.literal(select = true, focus = false)).asInstanceOf[js.Dynamic].`catch`((_: js.Any) => ())
 
   /** A Hierarchy click: the schematic drills there (or selects a leaf in its parent), and the
-    * module's source opens beside, keeping the focus in the tree. */
+    * module's source opens in a code group, keeping the focus in the tree. */
   private def openHierarchy(pathArg: js.Any): Unit =
     if (js.Array.isArray(pathArg)) {
       val path = pathArg.asInstanceOf[js.Array[Any]].toList.collect { case s: String => s }

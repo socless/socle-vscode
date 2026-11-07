@@ -269,9 +269,29 @@ object LogicTest extends TestSuite {
     }
 
     test("surferColumn") {
-      // the column after the Socle panel's, so the tab never covers it; beside the editor without a panel
-      assert(Logic.surferColumn(Some(1)) == 2, Logic.surferColumn(Some(2)) == 3)
+      // the Socle panel's column (SurferTab then moves the tab to a group below it); beside the
+      // editor without a panel
+      assert(Logic.surferColumn(Some(1)) == 1, Logic.surferColumn(Some(2)) == 2)
       assert(Logic.surferColumn(None) == -2) // vscode.ViewColumn.Beside
+    }
+
+    test("codeColumn") {
+      // code 1, panel 2, Surfer 3 (below the panel): the code group
+      assert(Logic.codeColumn(Seq(1), panel = Some(2), surfer = Some(3), groups = 3) == 1)
+      // the panel in 1 with Surfer below (2), code on the right (3): the code group, not beside the panel
+      assert(Logic.codeColumn(Seq(3), panel = Some(1), surfer = Some(2), groups = 3) == 3)
+      // the first of several code groups
+      assert(Logic.codeColumn(Seq(4, 1), panel = Some(2), surfer = Some(3), groups = 4) == 1)
+      // no code group (the panel and Surfer only): a new group after the last
+      assert(Logic.codeColumn(Nil, panel = Some(1), surfer = Some(2), groups = 2) == 3)
+      // no Surfer: the code group; a text editor in the panel's own group does not count
+      assert(Logic.codeColumn(Seq(2, 1), panel = Some(1), surfer = None, groups = 2) == 2)
+      assert(Logic.codeColumn(Seq(1), panel = Some(1), surfer = None, groups = 1) == 2)
+      // no panel: the first code group
+      assert(Logic.codeColumn(Seq(1), panel = None, surfer = None, groups = 1) == 1)
+      // no text editor shown: a free group (an empty window, or Settings in group 1) before a new one
+      assert(Logic.codeColumn(Nil, panel = None, surfer = None, groups = 1) == 1)
+      assert(Logic.codeColumn(Nil, panel = Some(2), surfer = Some(3), groups = 3) == 1)
     }
 
     test("panelRevealColumn") {

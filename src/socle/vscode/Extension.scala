@@ -100,6 +100,9 @@ object Extension {
       override val errorHandler          = js.defined(handler)
       // later changes of the socle.* settings reach the server (waveFlag, surferCommand)
       override val synchronize = js.defined(js.Dynamic.literal(configurationSection = "socle"))
+      override val middleware = js.defined(js.Dynamic.literal(window = js.Dynamic.literal(
+        showDocument = (showDocument _): js.Function2[js.Dynamic, js.Dynamic, js.Promise[js.Any]],
+      )))
     }
     val c = new LanguageClient("socle", "Socle", new ServerOptions { val run = exe; val debug = exe }, options)
     client = Some(c)
@@ -124,6 +127,30 @@ object Extension {
     })
 
     ignoreFailure(c.start())
+  }
+
+  /** `window/showDocument` from the server (a click on a box or a wire in the panel, which has the
+    * focus): the code opens in a code group ([[Panel.sourceColumn]]), not as a tab over the panel.
+    * A browser page (`external`) or a non-file uri goes to the client's own handler (`next`). */
+  private def showDocument(params: js.Dynamic, next: js.Dynamic): js.Promise[js.Any] = {
+    val external = params.external.asInstanceOf[js.UndefOr[Boolean]].getOrElse(false)
+    val uri      = Uri.parse(params.uri.asInstanceOf[String])
+    if (external || uri.scheme != "file") next(params).asInstanceOf[js.Promise[js.Any]]
+    else {
+      val opts = js.Dynamic.literal(
+        viewColumn = Panel.sourceColumn,
+        preserveFocus = !params.takeFocus.asInstanceOf[js.UndefOr[Boolean]].getOrElse(false),
+      )
+      params.selection.asInstanceOf[js.UndefOr[js.Dynamic]].foreach { r =>
+        opts.selection = new Range(r.start.line.asInstanceOf[Int], r.start.character.asInstanceOf[Int],
+          r.end.line.asInstanceOf[Int], r.end.character.asInstanceOf[Int])
+      }
+      val p = window.showTextDocument(uri, opts).asInstanceOf[js.Dynamic]
+      p.`then`(
+        (_: js.Any) => js.Dynamic.literal(success = true),
+        (_: js.Any) => js.Dynamic.literal(success = false),
+      ).asInstanceOf[js.Promise[js.Any]]
+    }
   }
 
   /** Swallows a rejection (the client already reports server failures) so it is not an unhandled rejection. */

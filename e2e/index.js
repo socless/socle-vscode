@@ -104,13 +104,48 @@ function apart() {
   if (!s[0].isActive) throw new Error(`the Surfer tab is hidden in its group: ${groupsText()}`);
 }
 
-/** Makes the Surfer tab the active editor, by focusing its group (where it is the active tab). */
-async function activateSurfer() {
-  const names = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth'];
-  const col = surferTab().group.viewColumn;
-  await vscode.commands.executeCommand(`workbench.action.focus${names[col - 1]}EditorGroup`);
-  await poll('the Surfer tab active', 10000, () => isWebview(vscode.window.tabGroups.activeTabGroup.activeTab, 'socle.surfer'));
+/** The Surfer tab is in the group right below the Socle panel's, so the waveforms sit under the
+  * schematic. From `vscode.getEditorLayout`: its leaves in order are the groups by column; a node's
+  * children are stacked when its orientation is 1 (vertical), the children's being the opposite. */
+async function below() {
+  const layout = await vscode.commands.executeCommand('vscode.getEditorLayout');
+  // Each leaf with its parent node and the orientation that parent arranges its children in.
+  const leaves = [];
+  const walk = (node, orientation) => {
+    for (const g of node.groups) {
+      if (g.groups && g.groups.length > 0) walk(g, 1 - orientation);
+      else leaves.push({ parent: node, orientation });
+    }
+  };
+  walk(layout, layout.orientation);
+  const p = socleTabs()[0].group.viewColumn, s = surferTab().group.viewColumn;
+  const lp = leaves[p - 1], ls = leaves[s - 1];
+  if (!(lp && ls && lp.parent === ls.parent && lp.orientation === 1 && s === p + 1)) {
+    throw new Error(`the Surfer tab is not right below the panel: ${groupsText()}, layout ${JSON.stringify(layout)}`);
+  }
 }
+
+/** The code `file` opened from the panel is in a group of its own: neither the panel's nor the
+  * Surfer tab's, and the panel is still showing (not covered by a tab). */
+function codeApart(file) {
+  const e = vscode.window.activeTextEditor;
+  const p = socleTabs()[0];
+  const s = surferTab();
+  if (!e || e.document.uri.fsPath !== file) throw new Error(`the active editor is not ${file}: ${groupsText()}`);
+  if (e.viewColumn === p.group.viewColumn) throw new Error(`the code opened in the panel's group: ${groupsText()}`);
+  if (s && e.viewColumn === s.group.viewColumn) throw new Error(`the code opened in the Surfer tab's group: ${groupsText()}`);
+  if (!p.isActive) throw new Error(`the Socle panel is covered in its group: ${groupsText()}`);
+}
+
+/** Focuses the group of `tab` (a webview of `viewType`, the active tab of its group). */
+async function focusGroupOf(tab, viewType) {
+  const names = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth'];
+  await vscode.commands.executeCommand(`workbench.action.focus${names[tab.group.viewColumn - 1]}EditorGroup`);
+  await poll(`the ${viewType} tab active`, 10000, () => isWebview(vscode.window.tabGroups.activeTabGroup.activeTab, viewType));
+}
+
+/** Makes the Surfer tab the active editor, by focusing its group (where it is the active tab). */
+const activateSurfer = () => focusGroupOf(surferTab(), 'socle.surfer');
 
 /** One op of webview-click.mjs's wave phase: writes wave-request-<n>.json, waits for its result. */
 let waveOps = 0;
@@ -314,6 +349,10 @@ async function run() {
     const spec = await openEditor(DEEP_SPEC_FILE);
     spec.selection = new vscode.Selection(0, 0, 0, 0);
 
+    // A real click focuses the panel's group (the driver's CDP click does not): focus it, so the
+    // code must open elsewhere than the active group.
+    await focusGroupOf(socleTabs()[0], 'socle.panel');
+
     const requestFile = path.join(runDir, 'click-request.json');
     const resultFile = path.join(runDir, 'click-result.json');
     // The driver also checks the embedded UI: no Source tab, logo or bottom panel, and VS Code's theme.
@@ -332,6 +371,9 @@ async function run() {
       const e = vscode.window.activeTextEditor;
       return e && e.document.uri.fsPath === file && e.selection.active.line === src.line - 1;
     });
+    // The click came from the panel (its group active): the code opens in the code group, not over it.
+    codeApart(file);
+    log(`      code opened apart: ${groupsText()}`);
 
     // The box click selected CLICK_INST: the Details view shows it.
     const det = await poll(`the Details view on ${CLICK_INST}`, 15000, async () => {
@@ -405,7 +447,7 @@ async function run() {
   // (Verilator) and sets the trace in ide.json; the panel's UI opens Surfer in its own editor tab
   // and drives it there. The driver checks both webviews over CDP (wave-request-<n>.json ops).
   const wave = {};
-  await step('10. Simulate opens Surfer in its own tab, beside the panel', async () => {
+  await step('10. Simulate opens Surfer in its own tab, below the panel', async () => {
     // A user setting: VS Code's client sends the `socle` section in didChangeConfiguration.
     await vscode.workspace.getConfiguration('socle').update('waveViewer', 'surfer-panel', vscode.ConfigurationTarget.Global);
     await poll('ide.json waveViewer == surfer-panel', 30000, async () => (await getJson(url + 'ide.json')).waveViewer === 'surfer-panel');
@@ -430,6 +472,7 @@ async function run() {
     await sleep(2000); // a second tab would show up here
     log(`      editor groups ${groupsText()}`);
     apart();
+    await below();
   });
 
   await step('10b. the Surfer tab shows GCD\'s plan; the panel has no Surfer pane', async () => {
@@ -439,6 +482,22 @@ async function run() {
 
   await step('10c. a selection in the panel focuses its signal in the Surfer tab', async () => {
     await driver('select', wave, 60000);
+  });
+
+  // As a click on a box in the panel (the server's showDocument), with the Surfer tab's group active:
+  // the code opens in the code group, neither over the Surfer tab nor over the panel.
+  await step('10c2. code opened from the panel with the Surfer tab active lands in a code group', async () => {
+    await activateSurfer();
+    const file = path.join(root(), GCD_FILE);
+    const r = await request(url + 'open', 'POST', { file: GCD_FILE, line: 24 });
+    if (r.status < 200 || r.status >= 300) throw new Error(`POST /open -> ${r.status} ${r.body}`);
+    await poll(`the active editor on ${GCD_FILE}`, 15000, () => {
+      const e = vscode.window.activeTextEditor;
+      return e && e.document.uri.fsPath === file;
+    });
+    log(`      editor groups ${groupsText()}`);
+    codeApart(file);
+    apart();
   });
 
   // Moving the tab must not reload its frame (retainContextWhenHidden): the driver compares the frame
@@ -499,6 +558,7 @@ async function run() {
     await poll(`the Surfer tab "${SURFER_TITLE}" back`, 30000, () => surferTabs().some((t) => t.label === SURFER_TITLE));
     log(`      editor groups ${groupsText()}`);
     apart();
+    await below();
     await driver('surfer', { ...wave, fresh: true }, 300000);
   });
 
@@ -512,6 +572,7 @@ async function run() {
     await sleep(2000);
     log(`      editor groups ${groupsText()}`);
     apart();
+    await below();
     await driver('surfer', { ...wave, fresh: true, freshPanel: true, shot: '-reopened' }, 300000);
   });
 

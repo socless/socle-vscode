@@ -98,8 +98,8 @@ async function driver(op, args = {}, timeoutMs = 60000) {
 const isWebview = (t, viewType) => !!t && t.input instanceof vscode.TabInputWebview && t.input.viewType.endsWith(viewType);
 const tabOf = (viewType) => vscode.window.tabGroups.all.flatMap((g) => g.tabs).find((t) => isWebview(t, viewType));
 
-/** Moves the Surfer tab (its own column, as Simulate opens it) into a group below the Socle panel,
-  * so the waveforms sit under the schematic. Only the screenshot does this, not the extension. */
+/** Makes sure the Surfer tab is in a group below the Socle panel, so the waveforms sit under the
+  * schematic. Simulate opens it there; this also covers an older build that opened it beside. */
 async function surferBelowPanel() {
   const names = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth'];
   const panel = await poll('the Socle panel tab', 10000, () => tabOf('socle.panel'));

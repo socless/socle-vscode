@@ -86,6 +86,13 @@ trait TextDocument extends js.Object {
 trait TextEditor extends js.Object {
   val document: TextDocument = js.native
   val selection: Selection = js.native
+  /** Live: it follows the editor when its group moves or is renumbered. */
+  def viewColumn: js.UndefOr[Int] = js.native
+}
+
+@js.native
+trait TabGroups extends js.Object {
+  val all: js.Array[js.Object] = js.native
 }
 
 @js.native
@@ -107,6 +114,8 @@ trait WebviewPanel extends Disposable {
   val webview: Webview = js.native
   var title: String = js.native
   def viewColumn: js.UndefOr[Int] = js.native
+  def active: Boolean = js.native
+  def onDidChangeViewState(listener: js.Function1[js.Any, Unit]): Disposable = js.native
   def reveal(viewColumn: js.UndefOr[Int] = js.undefined, preserveFocus: js.UndefOr[Boolean] = js.undefined): Unit = js.native
   def onDidDispose(listener: js.Function0[Unit]): Disposable = js.native
 }
@@ -120,6 +129,8 @@ trait WorkspaceConfiguration extends js.Object {
 @JSImport("vscode", "window")
 object window extends js.Object {
   def activeTextEditor: js.UndefOr[TextEditor] = js.native
+  def visibleTextEditors: js.Array[TextEditor] = js.native
+  def tabGroups: TabGroups = js.native
   def createWebviewPanel(
       viewType: String,
       title: String,

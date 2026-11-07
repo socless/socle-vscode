@@ -109,9 +109,21 @@ object Logic {
   /** `vscode.ViewColumn.Beside`: the column beside the active one. */
   val ViewColumnBeside = -2
 
-  /** The column a new Surfer tab opens in: the one after the Socle panel's (`panel`), so it never
-    * covers the schematic; beside the active editor when there is no panel. */
-  def surferColumn(panel: Option[Int]): Int = panel.fold(ViewColumnBeside)(_ + 1)
+  /** The column a new Surfer tab opens in: the Socle panel's (`panel`), from which [[SurferTab]]
+    * moves it to a group below, so the waveforms sit under the schematic; beside the active editor
+    * when there is no panel. */
+  def surferColumn(panel: Option[Int]): Int = panel.getOrElse(ViewColumnBeside)
+
+  /** The column code opens in from the panel (a click on a box or a wire) or the side bar, so it
+    * never covers the schematic or the waveforms: the first group showing a text editor
+    * (`textColumns`) that is neither the Socle panel's (`panel`) nor the Surfer tab's (`surfer`),
+    * else the first other of the `groups` ones (an empty window, Settings), else a new group. */
+  def codeColumn(textColumns: Seq[Int], panel: Option[Int], surfer: Option[Int], groups: Int): Int = {
+    val free = (c: Int) => !panel.contains(c) && !surfer.contains(c)
+    textColumns.filter(free).sorted.headOption
+      .orElse((1 to groups).find(free))
+      .getOrElse(groups + 1)
+  }
 
   /** The column `Panel.show` reveals the Socle panel in: its own (`existing`), so it never moves
     * (Beside is relative to the active editor, which may be the Surfer tab); beside the active editor

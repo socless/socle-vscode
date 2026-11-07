@@ -29,7 +29,7 @@ hierarchy and the details of the selection.
 </picture>
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/socless/socle-vscode/main/docs/media/waves-dark.png">
-  <img src="https://raw.githubusercontent.com/socless/socle-vscode/main/docs/media/waves-light.png" alt="After Simulate: Surfer beside the panel, following the selected stage" width="32%">
+  <img src="https://raw.githubusercontent.com/socless/socle-vscode/main/docs/media/waves-light.png" alt="After Simulate: Surfer below the panel, following the selected stage" width="32%">
 </picture>
 </p>
 <p align="center"><sub>The schematic follows your cursor · a state machine's diagram · waveforms that follow the selection</sub></p>
