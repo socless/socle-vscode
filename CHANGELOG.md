@@ -8,12 +8,17 @@ with Socle itself (see the [Socle changelog](https://github.com/socless/socle/bl
 
 ## [Unreleased]
 
+## [0.27.1] - 2026-11-09
+
+Bundles the language server of Socle 0.25.0.
+
 ### Changed
 
 - Simulate opens the Surfer tab in a group below the Socle panel, so the waveforms sit under
   the schematic instead of beside it.
 - A click on a box or a wire in the panel opens its code in a code group, never as a tab over
   the panel or the Surfer tab; the Socle side bar's links do the same.
+- The README shows a demo GIF and screenshots of the extension, dark and light.
 
 ## [0.27.0] - 2026-11-06
 
