@@ -25,9 +25,9 @@ object V {
   val vsce      = "3.2.1"             // @vscode/vsce, packages the extension
   val publishVer = "0.27.3-SNAPSHOT"
   /** The Socle release whose language server the vsix bundles. */
-  val socle     = "0.25.1"
+  val socle     = "0.25.2"
   /** sha256 of that release's `socle-lsp-<socle>.jar` (its SHA256SUMS). Bump with `socle`. */
-  val socleLspSha256 = "546425886acbe57b7fb4432fd0b7af32f3df1e5c0eec0c04a8128631fa173cf4"
+  val socleLspSha256 = "a82f84b161dd895a16e9df68f5a5317c9e811e0c0bd932d60368a9d03e6e5ec6"
   val socleRepo = "socless/socle"
 }
 

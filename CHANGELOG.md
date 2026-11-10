@@ -8,6 +8,15 @@ with Socle itself (see the [Socle changelog](https://github.com/socless/socle/bl
 
 ## [Unreleased]
 
+### Changed
+
+- The bundled server, from Socle 0.25.2: View design and Simulate run on the test module's own
+  JDK when it pins one, a `test` module that is not a `TestModule` keeps its fork settings,
+  FunSuite tests inside a `def` get their lens, and a workspace opened above or below its
+  `build.mill` works. Lenses follow branch switches made outside the editor. Waveforms of a
+  design whose top `io` bundle is empty follow the schematic, and a keyboard click after a
+  pan is no longer swallowed.
+
 ## [0.27.2] - 2026-11-10
 
 Bundles the language server of Socle 0.25.1.

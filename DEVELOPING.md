@@ -41,7 +41,7 @@ Socle checkout. Use a scratch clone at the pinned tag, not one you work in, beca
 server runs Mill there.
 
 ```bash
-git clone --branch v0.25.1 git@github.com:socless/socle.git /tmp/socle
+git clone --branch v0.25.2 git@github.com:socless/socle.git /tmp/socle
 ./mill stage
 SOCLE_ROOT=/tmp/socle e2e/run.sh out/stage.dest
 ```
