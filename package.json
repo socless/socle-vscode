@@ -54,6 +54,11 @@
           "default": "emitVcd",
           "description": "ChiselSim option that turns waveforms on for Simulate, passed to ScalaTest as -D<flag>=1 (emitVcd is ChiselSim's; a project may define its own, such as emitFst)."
         },
+        "socle.firtoolOpts": {
+          "type": "string",
+          "default": "-preserve-values=named",
+          "description": "firtool options Simulate compiles the design with, passed to ScalaTest as -DfirtoolOpts=<value> (several separated by spaces; ChiselSim adds them to the test's own). The default keeps the ports and instances firtool would remove, so they are in the trace. Empty: none, as ./mill <module>.test. Needs Socle 0.26.0 or newer."
+        },
         "socle.surferCommand": {
           "type": "string",
           "default": "surfer",

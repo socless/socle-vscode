@@ -8,6 +8,17 @@ with Socle itself (see the [Socle changelog](https://github.com/socless/socle/bl
 
 ## [Unreleased]
 
+### Added
+
+- The `socle.firtoolOpts` setting (default `-preserve-values=named`): the firtool options
+  Simulate compiles the design with, so the ports and instances firtool would remove are in
+  the trace. Empty turns it off. A server older than Socle 0.26.0 ignores it.
+
+### Changed
+
+- The bundled server, from Socle 0.26.0: Simulate keeps the names firtool would remove
+  (`socle.firtoolOpts`).
+
 ## [0.27.3] - 2026-11-10
 
 Bundles the language server of Socle 0.25.2.
