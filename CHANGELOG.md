@@ -8,6 +8,10 @@ with Socle itself (see the [Socle changelog](https://github.com/socless/socle/bl
 
 ## [Unreleased]
 
+## [0.28.0] - 2026-11-10
+
+Bundles the language server of Socle 0.26.0.
+
 ### Added
 
 - The `socle.firtoolOpts` setting (default `-preserve-values=named`): the firtool options
