@@ -8,6 +8,11 @@ with Socle itself (see the [Socle changelog](https://github.com/socless/socle/bl
 
 ## [Unreleased]
 
+### Changed
+
+- The bundled server, from Socle 0.25.1: the panel fits a narrow editor group, with no
+  scrollbars around the page.
+
 ## [0.27.1] - 2026-11-09
 
 Bundles the language server of Socle 0.25.0.
