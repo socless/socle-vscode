@@ -8,6 +8,10 @@ with Socle itself (see the [Socle changelog](https://github.com/socless/socle/bl
 
 ## [Unreleased]
 
+## [0.27.2] - 2026-11-10
+
+Bundles the language server of Socle 0.25.1.
+
 ### Changed
 
 - The bundled server, from Socle 0.25.1: the panel fits a narrow editor group, with no
