@@ -220,6 +220,61 @@ object SidebarModelTest extends TestSuite {
       }
     }
 
+    test("fold groups") {
+      // Cluster folds cores_0..cores_2 (group "cores"); `ctl` is not a copy.
+      val folded = json(
+        """{"type":"socle-state",
+          | "design":{"top":"Top","modules":[
+          |   {"name":"Top","scalaClass":"x.Top","kind":"internal","source":null,"children":[{"name":"cl","type":"Cluster"}]},
+          |   {"name":"Cluster","scalaClass":"x.Cluster","kind":"internal","source":null,
+          |    "children":[{"name":"cores_0","type":"Core","foldGroup":"cores"},{"name":"ctl","type":"Ctl"},
+          |                {"name":"cores_1","type":"Core_1","foldGroup":"cores"},{"name":"cores_2","type":"Core_2","foldGroup":"cores"}]},
+          |   {"name":"Core","scalaClass":"x.Core","kind":"internal","source":{"file":"src/Core.scala","line":3},"children":[]},
+          |   {"name":"Core_1","scalaClass":"x.Core","kind":"internal","source":null,"children":[]},
+          |   {"name":"Core_2","scalaClass":"x.Core","kind":"internal","source":null,"children":[]},
+          |   {"name":"Ctl","scalaClass":"x.Ctl","kind":"internal","source":null,"children":[]}
+          | ]},
+          | "path":["Top","cl"], "selection":"cores",
+          | "details":{"name":"cores","module":"Core","scalaClass":"x.Core","kind":"internal","params":[],"ports":[],"copies":3}
+          |}""".stripMargin)
+      val u = parseUiState(folded).get
+      val d = u.design.get.get
+      val cl = List("Top", "cl")
+      val g  = cl :+ "#cores"
+      test("a group is one node where its first copy is, its copies under it") {
+        assert(d.modules("Cluster").groups == Map("cores_0" -> "cores", "cores_1" -> "cores", "cores_2" -> "cores"))
+        assert(hierChildren(d, cl) == Seq(g, cl :+ "ctl"))
+        assert(hierChildren(d, g) == Seq(cl :+ "cores_0", cl :+ "cores_1", cl :+ "cores_2"))
+        assert(hierParent(d, cl :+ "cores_1") == Some(g), hierParent(d, g) == Some(cl), hierParent(d, cl :+ "ctl") == Some(cl))
+        assert(hierParent(d, List("Top")) == None)
+      }
+      test("the group row") {
+        val r = hierRow(d, g).get
+        assert(r.label == "cores × 3", r.description == "Core", r.contextValue == "group", r.expandable)
+        assert(r.id == "hier:Top/cl/#cores", r.tooltip.contains("3 generator copies of x.Core"))
+        assert(hierRow(d, cl :+ "#nope") == None)
+      }
+      test("a group click selects the folded box; its source is its first copy's") {
+        assert(navigateTarget(d, g) == Some((cl, Some("cores"))))
+        assert(navigateTarget(d, cl :+ "cores_1") == Some((cl, Some("cores_1"))))
+        assert(moduleSource(d, g) == Some(SourceInfo("src/Core.scala", 3)))
+      }
+      test("the selected group or copy is revealed") {
+        assert(revealPath(d, cl, Some("cores")) == Some(g))
+        assert(revealPath(d, cl, Some("cores_2")) == Some(cl :+ "cores_2"))
+      }
+      test("the details give the copies") {
+        val rows = detailRows(u.details.get)
+        assert(rows.map(_.label) == Seq("cores", "3 generator copies", "x.Core", "Ports"))
+        assert(detailRows(parseUiState(state).get.details.get).forall(_.id != "detail:copies"))
+      }
+      test("an older server (no foldGroup): every copy is a row") {
+        val plain = parseUiState(state).get.design.get.get
+        assert(plain.modules.values.forall(_.groups.isEmpty))
+        assert(hierChildren(plain, List("DeepSoc")) == Seq(List("DeepSoc", "cluster0"), List("DeepSoc", "pipe")))
+      }
+    }
+
     test("detailRows") {
       val det = parseUiState(state).get.details.get
       val rows = detailRows(det)

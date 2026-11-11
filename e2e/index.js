@@ -326,6 +326,15 @@ async function run() {
       return h.length > 0 && h[0].label === 'DeepSoc' && h.some((r) => r.depth === 1 && r.label === CLICK_INST) && h;
     });
     log(`      Hierarchy: ${hier.map((r) => '  '.repeat(r.depth) + r.label + ' (' + r.description + ')').join(', ')}`);
+    // Generator copies show as the schematic folds them: Cluster's cores are one
+    // `cores × 2` row (a click selects the folded box), the copies under it.
+    const at = hier.findIndex((r) => r.depth === 1 && r.label === CLICK_INST);
+    const under = hier.slice(at + 1, hier.findIndex((r, i) => i > at && r.depth <= 1) >>> 0);
+    const group = under.find((r) => r.depth === 2 && r.label === 'cores × 2');
+    if (!group || !group.command) throw new Error(`no "cores × 2" row with a command under ${CLICK_INST}`);
+    const copyRows = under.filter((r) => r.depth === 3 && /^cores_\d$/.test(r.label)).map((r) => r.label);
+    if (JSON.stringify(copyRows) !== '["cores_0","cores_1"]') throw new Error(`the copies under the group: ${JSON.stringify(copyRows)}`);
+    if (under.some((r) => r.depth === 2 && /^cores_\d$/.test(r.label))) throw new Error('a copy is still a row of its module');
 
     // Where a click on CLICK_INST must lead, from the design itself, and the UI's precondition for
     // sending POST open: the module source is absolute or one of the embedded sources.
