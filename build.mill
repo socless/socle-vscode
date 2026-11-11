@@ -23,11 +23,11 @@ object V {
   val utest     = "0.8.5"
   val vscodeLanguageClient = "9.0.1"  // npm, staged into the extension at packaging
   val vsce      = "3.2.1"             // @vscode/vsce, packages the extension
-  val publishVer = "0.28.1-SNAPSHOT"
+  val publishVer = "0.29.0"
   /** The Socle release whose language server the vsix bundles. */
-  val socle     = "0.26.0"
+  val socle     = "0.27.0"
   /** sha256 of that release's `socle-lsp-<socle>.jar` (its SHA256SUMS). Bump with `socle`. */
-  val socleLspSha256 = "1865c5575c1fd33a5227ca3eccb435d3add6c3d0dc5914f31d3d8375b414ef85"
+  val socleLspSha256 = "82f8f70f299023f94d5eb3a34fb0a1babe55a7280688fed5ee33a8fb2c77fbcd"
   val socleRepo = "socless/socle"
 }
 

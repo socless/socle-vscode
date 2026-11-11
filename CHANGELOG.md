@@ -8,6 +8,10 @@ with Socle itself (see the [Socle changelog](https://github.com/socless/socle/bl
 
 ## [Unreleased]
 
+## [0.29.0] - 2026-11-11
+
+Bundles the language server of Socle 0.27.0.
+
 ### Added
 
 - The Hierarchy view shows generator copies as the schematic folds them: one `<name> × <n>` row,
