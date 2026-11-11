@@ -152,10 +152,8 @@ object Sidebar {
       paths.flatMap(hierElement(d, _)).toJSArray
     }
 
-  private def hierParent(el: js.Dynamic): js.UndefOr[js.Dynamic] = {
-    val p = pathOf(el)
-    design.filter(_ => p.size > 1).flatMap(hierElement(_, p.init)).orUndefined
-  }
+  private def hierParent(el: js.Dynamic): js.UndefOr[js.Dynamic] =
+    design.flatMap(d => SidebarModel.hierParent(d, pathOf(el)).flatMap(hierElement(d, _))).orUndefined
 
   /** Selects the drill path, or the selected instance under it, in the Hierarchy (only while the
     * view is visible: reveal would open it). */
