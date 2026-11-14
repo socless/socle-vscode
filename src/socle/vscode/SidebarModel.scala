@@ -3,8 +3,8 @@ package socle.vscode
 import scala.scalajs.js
 
 /** The side panel's pure model: the `socle/tests` and `socle-state`
-  * payloads, per-test run states and the rows of the three trees (Tests,
-  * Hierarchy, Details). No `vscode` import, so it runs under plain Node in tests;
+  * payloads, per-test run states and the rows of the four trees (Tests,
+  * Hierarchy, Classes, Details). No `vscode` import, so it runs under plain Node in tests;
   * [[Sidebar]] turns rows into VS Code tree items.
   */
 object SidebarModel {
@@ -108,7 +108,8 @@ object SidebarModel {
       else Idle
   }
 
-  /** One tree row, independent of VS Code: `icon` is a codicon id. */
+  /** One tree row, independent of VS Code: `icon` is a codicon id. `expanded`: an
+    * expandable row that starts open (Classes); `path`: the instance a click shows (Classes). */
   final case class Row(
       id: String,
       label: String,
@@ -118,6 +119,8 @@ object SidebarModel {
       contextValue: String = "",
       expandable: Boolean = false,
       children: Seq[Row] = Nil,
+      expanded: Boolean = false,
+      path: List[String] = Nil,
   )
 
   def suiteRow(s: SuiteInfo, rootUri: Option[String]): Row = {
@@ -156,10 +159,18 @@ object SidebarModel {
   /** `copies`: the generator copies a folded box stands for (0 for any other instance). */
   final case class DetailsInfo(name: String, module: String, scalaClass: String, kind: String,
       params: Seq[(String, String, String)], ports: Seq[(String, String, String)], copies: Int = 0)
+  /** The class view (Socle 0.30.0 and later send it with the design): a module
+    * class, its parameterizations (the modules built with the same arguments), their instances. */
+  final case class ClassInstance(path: List[String], label: String, module: String)
+  final case class ClassParams(label: String, unknown: Boolean, params: Seq[(String, String, String)],
+      instances: Seq[ClassInstance])
+  final case class ClassInfo(scalaClass: String, name: String, library: Boolean, modules: Int,
+      parameterizations: Seq[ClassParams])
   /** `design`: None when the message leaves the design as it was (the UI sends the
-    * hierarchy only when it changes), Some(None) when there is none. */
+    * hierarchy only when it changes), Some(None) when there is none. `classes` comes
+    * with the design: None with it unchanged, else the class view (empty from an older server). */
   final case class UiState(design: Option[Option[DesignInfo]], path: List[String], selection: Option[String],
-      details: Option[DetailsInfo])
+      details: Option[DetailsInfo], classes: Option[Seq[ClassInfo]] = None)
 
   private def parseModule(v: js.Any): Option[ModuleInfo] =
     for {
@@ -199,8 +210,31 @@ object SidebarModel {
             triples(x.params, "name", "type", "value"), triples(x.ports, "name", "dir", "type"),
             int(x.copies).getOrElse(0)))
         }
-      for (p <- path; s <- optStr(o.selection); d <- design; det <- details) yield UiState(d, p, s, det)
+      val classes = design.flatten.map(_ => arr(o.classes).getOrElse(Nil).flatMap(parseClass))
+      for (p <- path; s <- optStr(o.selection); d <- design; det <- details) yield UiState(d, p, s, det, classes)
     }
+
+  private def strings(v: js.Any): Option[List[String]] =
+    arr(v).filter(_.forall(p => js.typeOf(p) == "string")).map(_.map(_.asInstanceOf[String]).toList)
+
+  // A malformed class, parameterization or instance is skipped.
+  private def parseClass(v: js.Any): Option[ClassInfo] =
+    for {
+      o  <- obj(v)
+      sc <- str(o.scalaClass)
+      ps <- arr(o.parameterizations)
+    } yield ClassInfo(sc, str(o.name).getOrElse(sc.split('.').last), o.library.asInstanceOf[Any] == true,
+      int(o.modules).getOrElse(0), ps.flatMap { p =>
+        for {
+          x     <- obj(p)
+          label <- str(x.label)
+          is    <- arr(x.instances)
+        } yield ClassParams(label, x.unknown.asInstanceOf[Any] == true, triples(x.params, "name", "type", "value"),
+          is.flatMap(i => obj(i).flatMap { y =>
+            for (path <- strings(y.path) if path.nonEmpty; l <- str(y.label))
+              yield ClassInstance(path, l, str(y.module).getOrElse(""))
+          }))
+      })
 
   // ── Hierarchy ──────────────────────────────────────────────────────────────
 
@@ -325,6 +359,34 @@ object SidebarModel {
         Row(s"detail:port:$i", n, s"$dir $t", s"$n: $dir $t", icon)
       })
     Seq(head) ++ fold ++ cls ++ params :+ ports
+  }
+
+  // ── Classes ────────────────────────────────────────────────────────────────
+
+  val UnknownParams = "some values could not be read: not compared"
+
+  /** The Classes view: a row per class (collapsed, its module count), under it a row per
+    * parameterization (open, its instance count, `?` when not compared) and under that its
+    * instances, a click showing each. A class built only without parameters lists its
+    * instances directly. Ids from the class, the parameterization's index and the path, as
+    * two parameterizations may share a label. */
+  def classRows(classes: Seq[ClassInfo]): Seq[Row] = classes.map { c =>
+    val cid = s"class:${c.scalaClass}"
+    def instances(pid: String, is: Seq[ClassInstance]) = is.map { i =>
+      Row(s"$pid/${i.path.mkString("/")}", i.label, tooltip = s"module ${i.module}\n${i.path.mkString("/")}",
+        icon = "circuit-board", contextValue = "classInstance", path = i.path)
+    }
+    val kids = c.parameterizations match {
+      case Seq(p) if p.params.isEmpty => instances(cid, p.instances)
+      case ps => ps.zipWithIndex.map { case (p, n) =>
+        val pid = s"$cid#$n"
+        Row(pid, if (p.unknown) s"${p.label} ?" else p.label, p.instances.size.toString,
+          if (p.unknown) UnknownParams else "modules built with the same constructor arguments",
+          "symbol-parameter", "classParams", expandable = true, children = instances(pid, p.instances), expanded = true)
+      }
+    }
+    Row(cid, c.name, c.modules.toString, c.scalaClass, if (c.library) "package" else "symbol-class", "class",
+      expandable = kids.nonEmpty, children = kids)
   }
 
   // ── editor side ────────────────────────────────────────────────────────────

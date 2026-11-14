@@ -36,9 +36,9 @@ The extension talks to the server through LSP and the `socle/*` methods listed i
 ## End-to-end test
 
 `e2e/run.sh` drives the staged extension in a headless VS Code (`xvfb-run`): it views and simulates
-the example's ChiselSim tests, clicks in the panel and checks the Surfer tab. Its workspace is a
-Socle checkout. Use a scratch clone at the pinned tag, not one you work in, because the language
-server runs Mill there.
+the example's ChiselSim tests, clicks in the panel and in the Classes view, and checks the Surfer
+tab. Its workspace is a Socle checkout. Use a scratch clone at the pinned tag, not one you work in,
+because the language server runs Mill there.
 
 ```bash
 git clone --branch v0.29.0 git@github.com:socless/socle.git /tmp/socle

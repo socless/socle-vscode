@@ -288,6 +288,90 @@ object SidebarModelTest extends TestSuite {
       assert(bare.map(_.label) == Seq("core", "Ports"))
     }
 
+    test("classes") {
+      // Cluster: one parameterization; Core: only without parameters; Lane: two that
+      // could not be compared (the same label); then a library class.
+      val withClasses = json(
+        """{"type":"socle-state","path":["DeepSoc"],"selection":null,"details":null,
+          | "design":{"top":"DeepSoc","modules":[{"name":"DeepSoc","children":[]}]},
+          | "classes":[
+          |  {"scalaClass":"deephier.Cluster","name":"Cluster","library":false,"modules":2,"parameterizations":[
+          |    {"label":"(nCores = 2)","unknown":false,"params":[{"name":"nCores","type":"Int","value":"2"}],"instances":[
+          |      {"path":["DeepSoc","cluster0"],"label":"cluster0","module":"Cluster"},
+          |      {"path":["DeepSoc","cluster1"],"label":"cluster1","module":"Cluster_1"}]}]},
+          |  {"scalaClass":"deephier.Core","name":"Core","library":false,"modules":2,"parameterizations":[
+          |    {"label":"(no parameters)","unknown":false,"params":[],"instances":[
+          |      {"path":["DeepSoc","cluster0","cores_0"],"label":"cluster0/cores_0","module":"Core"},
+          |      {"path":["DeepSoc","cluster0","cores_1"],"label":"cluster0/cores_1","module":"Core_1"}]}]},
+          |  {"scalaClass":"x.Lane","name":"Lane","library":false,"modules":2,"parameterizations":[
+          |    {"label":"(f = <unreadable>)","unknown":true,"params":[{"name":"f","type":"","value":"<unreadable>"}],
+          |     "instances":[{"path":["DeepSoc","l0"],"label":"l0","module":"Lane"}]},
+          |    {"label":"(f = <unreadable>)","unknown":true,"params":[{"name":"f","type":"","value":"<unreadable>"}],
+          |     "instances":[{"path":["DeepSoc","l1"],"label":"l1","module":"Lane_1"}]}]},
+          |  {"scalaClass":"chisel3.util.Queue","name":"Queue","library":true,"modules":1,"parameterizations":[
+          |    {"label":"(entries = 4)","unknown":false,"params":[{"name":"entries","type":"Int","value":"4"}],
+          |     "instances":[{"path":["DeepSoc","pipe"],"label":"pipe","module":"Queue4"}]}]}
+          | ]}""".stripMargin)
+      val cs = parseUiState(withClasses).get.classes.get
+      val rows = classRows(cs)
+      def all(rs: Seq[Row]): Seq[Row] = rs.flatMap(r => r +: all(r.children))
+
+      test("a row per class, as delivered: collapsed, its module count, its full name") {
+        assert(rows.map(_.label) == Seq("Cluster", "Core", "Lane", "Queue"))
+        assert(rows.map(_.description) == Seq("2", "2", "2", "1"))
+        assert(rows.head.tooltip == "deephier.Cluster", rows.forall(r => r.expandable && !r.expanded))
+        assert(rows.map(_.icon) == Seq("symbol-class", "symbol-class", "symbol-class", "package"))
+      }
+      test("a parameterization: open, its instance count, its instances") {
+        val p = rows.head.children.head
+        assert(p.label == "(nCores = 2)", p.description == "2", p.expandable, p.expanded)
+        assert(p.tooltip == "modules built with the same constructor arguments")
+        assert(p.children.map(_.label) == Seq("cluster0", "cluster1"))
+        val i = p.children(1)
+        assert(i.path == List("DeepSoc", "cluster1"), i.tooltip == "module Cluster_1\nDeepSoc/cluster1", !i.expandable)
+      }
+      test("a class built only without parameters lists its instances directly") {
+        val core = rows(1)
+        assert(core.children.map(_.label) == Seq("cluster0/cores_0", "cluster0/cores_1"))
+        assert(core.children.map(_.path.last) == Seq("cores_0", "cores_1"))
+      }
+      test("a parameterization not compared is marked") {
+        val lane = rows(2).children
+        assert(lane.map(_.label) == Seq("(f = <unreadable>) ?", "(f = <unreadable>) ?"))
+        assert(lane.forall(_.tooltip == UnknownParams), lane.map(_.description) == Seq("1", "1"))
+      }
+      test("distinct ids, though two parameterizations share a label") {
+        val ids = all(rows).map(_.id)
+        assert(ids.distinct.size == ids.size)
+      }
+      test("only instances navigate") {
+        assert(all(rows).filter(_.path.nonEmpty).map(_.label) ==
+          Seq("cluster0", "cluster1", "cluster0/cores_0", "cluster0/cores_1", "l0", "l1", "pipe"))
+      }
+      test("an older server (no classes): an empty class view") {
+        assert(parseUiState(state).get.classes == Some(Nil))
+        assert(classRows(Nil) == Nil)
+      }
+      test("no design: an empty class view; no design key: unchanged") {
+        assert(parseUiState(json("""{"type":"socle-state","design":null,"path":[],"selection":null,"details":null}""")).get.classes == Some(Nil))
+        assert(parseUiState(json("""{"type":"socle-state","path":["A"],"selection":null,"details":null}""")).get.classes == None)
+      }
+      test("malformed parts are skipped, the rest of the state kept") {
+        val bad = json(
+          """{"type":"socle-state","path":["T"],"selection":null,"details":null,
+            | "design":{"top":"T","modules":[{"name":"T","children":[]}]},
+            | "classes":[7,{"name":"NoClass"},{"scalaClass":"a.A","parameterizations":[
+            |   3,{"label":"(no parameters)","params":[],"instances":[{"path":[],"label":"x"},{"path":["T",1],"label":"y"},
+            |     {"path":["T","ok"],"label":"ok"}]}]}]}""".stripMargin)
+        val u = parseUiState(bad).get
+        assert(u.design.get.get.top == "T")
+        assert(u.classes == Some(Seq(ClassInfo("a.A", "A", false, 0,
+          Seq(ClassParams("(no parameters)", false, Nil, Seq(ClassInstance(List("T", "ok"), "ok", ""))))))))
+        assert(parseUiState(json("""{"type":"socle-state","path":[],"selection":null,"details":null,
+                                   |"design":{"top":"T","modules":[]},"classes":"x"}""".stripMargin)).get.classes == Some(Nil))
+      }
+    }
+
     test("sourcePath") {
       assert(sourcePath("/abs/A.scala", Some("/ws")) == Some("/abs/A.scala"))
       assert(sourcePath("C:\\x\\A.scala", Some("/ws")) == Some("C:\\x\\A.scala"))
