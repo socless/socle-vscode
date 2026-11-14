@@ -8,6 +8,10 @@ with Socle itself (see the [Socle changelog](https://github.com/socless/socle/bl
 
 ## [Unreleased]
 
+## [0.31.0] - 2026-11-14
+
+Bundles the language server of Socle 0.30.0.
+
 ### Added
 
 - The Classes view, after Hierarchy: the design's modules by Scala class (user classes first,
