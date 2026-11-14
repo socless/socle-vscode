@@ -5,11 +5,11 @@ import scala.scalajs.js.JSConverters._
 import socle.vscode.facade._
 import SidebarModel._
 
-/** The Socle side panel: the Tests, Hierarchy and Details tree views of the
+/** The Socle side panel: the Tests, Hierarchy, Classes and Details tree views of the
   * activity bar container. Decisions live in [[SidebarModel]]; this only wires
   * vscode. Tests come from the language server (`socle/tests`, refreshed on
-  * `socle/testsChanged`, run states from `socle/status`); Hierarchy and
-  * Details from the UI in the panel (`socle-state`, through [[Panel]]).
+  * `socle/testsChanged`, run states from `socle/status`); Hierarchy, Classes
+  * and Details from the UI in the panel (`socle-state`, through [[Panel]]).
   *
   * Tree elements are plain objects holding their tree item (`item`), so the
   * e2e's `socle._views` snapshot and the inline actions see real fields.
@@ -20,12 +20,14 @@ object Sidebar {
   private val tracker     = new RunTracker
   private var ui          = Option.empty[UiState]    // the last path, selection and details
   private var design      = Option.empty[DesignInfo] // the last hierarchy (sent only when it changes)
+  private var classes     = Seq.empty[ClassInfo]     // the last class view (sent with the design)
   private var client      = Option.empty[LanguageClient]
   private var problem     = Option.empty[String]     // why there are no tests (Java, server stopped)
 
   private val testsEvents   = new EventEmitter()
   private val hierEvents    = new EventEmitter()
   private val detailsEvents = new EventEmitter()
+  private val classesEvents = new EventEmitter()
   private var testsView     = Option.empty[TreeView]
   private var hierView      = Option.empty[TreeView]
   private var detailsView   = Option.empty[TreeView]
@@ -193,11 +195,26 @@ object Sidebar {
     case Some(e) => e.children.asInstanceOf[js.Array[js.Dynamic]]
   }
 
+  // ── Classes ────────────────────────────────────────────────────────────────
+
+  // An instance row shows its instance as a Hierarchy click does.
+  private def classElements(rows: Seq[Row]): js.Array[js.Dynamic] =
+    rows.map { r =>
+      val state = if (!r.expandable) Flat else if (r.expanded) Expanded else Collapsed
+      val cmd   = Option.when(r.path.nonEmpty)(command("socle._openHierarchy", "Show in the schematic", r.path.toJSArray))
+      js.Dynamic.literal(kind = "class", item = item(r, state, cmd), children = classElements(r.children))
+    }.map(e => e: js.Dynamic).toJSArray
+
+  private def classesChildren(el: js.UndefOr[js.Dynamic]): js.Array[js.Dynamic] = el.toOption match {
+    case None    => classElements(classRows(classes))
+    case Some(e) => e.children.asInstanceOf[js.Array[js.Dynamic]]
+  }
+
   // ── wiring ─────────────────────────────────────────────────────────────────
 
   private val NoDesign = "Run View design on a test to see its design here."
 
-  /** Creates the three views and the side panel commands. */
+  /** Creates the four views and the side panel commands. */
   def register(ctx: ExtensionContext): Unit = {
     def view(id: String, p: js.Object): TreeView = {
       val v = window.createTreeView(id, js.Dynamic.literal(treeDataProvider = p, showCollapseAll = true))
@@ -207,10 +224,11 @@ object Sidebar {
     testsView = Some(view("socle.tests", provider(testsEvents, testsChildren)))
     hierView = Some(view("socle.hierarchy", provider(hierEvents, hierChildrenOf, hierParent)))
     detailsView = Some(view("socle.details", provider(detailsEvents, detailsChildren)))
+    view("socle.classes", provider(classesEvents, classesChildren)) // empty: its welcome content
     hierView.foreach(_.message = NoDesign)
     detailsView.foreach(_.message = NoDesign)
     hierView.foreach(v => ctx.subscriptions.push(v.onDidChangeVisibility((_: js.Any) => revealDrillPath())))
-    Seq(testsEvents, hierEvents, detailsEvents).foreach(e => ctx.subscriptions.push(e))
+    Seq(testsEvents, hierEvents, detailsEvents, classesEvents).foreach(e => ctx.subscriptions.push(e))
 
     def register(id: String, f: js.Function): Unit = ctx.subscriptions.push(commands.registerCommand(id, f))
     register("socle.viewDesignItem", ((el: js.Any) => runOnItem("socle.viewDesign", el)): js.Function1[js.Any, Unit])
@@ -255,6 +273,10 @@ object Sidebar {
       hierView.foreach(_.message = hm)
       hierEvents.fire(js.undefined)
     }
+    s.classes.foreach { c =>
+      classes = c
+      classesEvents.fire(js.undefined)
+    }
     val dm: js.UndefOr[String] = if (s.details.isEmpty) NoDesign else js.undefined
     detailsView.foreach(_.message = dm)
     detailsEvents.fire(js.undefined)
@@ -265,6 +287,7 @@ object Sidebar {
   def onPanelClosed(): Unit = {
     ui = None
     design = None
+    classes = Nil
     tracker.panelClosed()
     refreshTests()
     hierElements = Map.empty
@@ -272,9 +295,10 @@ object Sidebar {
     detailsView.foreach(_.message = NoDesign)
     hierEvents.fire(js.undefined)
     detailsEvents.fire(js.undefined)
+    classesEvents.fire(js.undefined)
   }
 
-  /** For the e2e (`socle._views`): every row of the three trees, depth first, with its element. */
+  /** For the e2e (`socle._views`): every row of the four trees, depth first, with its element. */
   private def snapshot(): js.Any = {
     def walk(children: js.UndefOr[js.Dynamic] => js.Array[js.Dynamic]): js.Array[js.Dynamic] = {
       val out = js.Array[js.Dynamic]()
@@ -287,7 +311,8 @@ object Sidebar {
       go(js.undefined, 0)
       out
     }
-    js.Dynamic.literal(tests = walk(testsChildren), hierarchy = walk(hierChildrenOf), details = walk(detailsChildren))
+    js.Dynamic.literal(tests = walk(testsChildren), hierarchy = walk(hierChildrenOf), details = walk(detailsChildren),
+      classes = walk(classesChildren))
   }
 
   private def ignore(p: js.Promise[_]): Unit = p.asInstanceOf[js.Dynamic].`catch`((_: js.Any) => ())

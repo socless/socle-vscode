@@ -3,7 +3,9 @@
 Chisel IDE support for Scala files: a "View design" lens above ChiselSim tests opens the elaborated
 design in a panel beside the editor, and the schematic follows your cursor. The Socle side panel
 (activity bar) lists the workspace's tests (View design and Simulate on each), the design's instance
-hierarchy and the details of the selection.
+hierarchy, its classes and the details of the selection. The Classes view groups the modules by
+Scala class, then by the constructor arguments they were built with (same arguments, one row), then
+lists their instances: a click shows the instance in the schematic.
 
 <p align="center">
 <picture>

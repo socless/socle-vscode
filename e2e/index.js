@@ -182,9 +182,9 @@ async function viewDesignLens(specUri, rel = SPEC_FILE, accept = () => true) {
   });
 }
 
-/** The rows of the side panel's three trees (`socle._views`): {tests, hierarchy, details}. */
+/** The rows of the side panel's four trees (`socle._views`): {tests, hierarchy, details, classes}. */
 async function views() {
-  return (await vscode.commands.executeCommand('socle._views')) || { tests: [], hierarchy: [], details: [] };
+  return (await vscode.commands.executeCommand('socle._views')) || { tests: [], hierarchy: [], details: [], classes: [] };
 }
 
 /** The Tests view row of `test` (depth 1) under the suite labelled `suite`. */
@@ -392,6 +392,45 @@ async function run() {
     log(`      Details: ${det.map((r) => '  '.repeat(r.depth) + r.label + (r.description ? ' (' + r.description + ')' : '')).join(', ')}`);
     if (det[0].description !== child.type) throw new Error(`Details names module ${det[0].description}, expected ${child.type}`);
     if (!det.some((r) => r.label === 'Ports')) throw new Error('no Ports in the Details view');
+  });
+
+  // The Classes view comes with the design (Socle 0.30.0 and later; an older server sends none: the
+  // view is empty). The driver clicks Cluster, then its instance cluster1, in the side panel, checks
+  // the schematic drilled there (breadcrumb) and takes classes.png; step 7b drills back to cluster0.
+  await step('7a. Classes view lists Cluster; an instance click drills there', async () => {
+    const runDir = process.env.SOCLE_E2E_DIR;
+    await poll('state-ready.json from webview-click.mjs', 30000, () => fs.existsSync(path.join(runDir, 'state-ready.json')));
+    const v = await views();
+    const cls = v.classes;
+    log(`      Classes: ${cls.map((r) => '  '.repeat(r.depth) + r.label + (r.description ? ' (' + r.description + ')' : '')).join(', ')}`);
+    let req = { inst: null };
+    if (cls.length === 0) {
+      log('      no class view from this server (older than Socle 0.30.0): the view shows its welcome content');
+    } else {
+      const at = cls.findIndex((r) => r.depth === 0 && r.label === 'Cluster');
+      if (at < 0) throw new Error('no Cluster row in the Classes view');
+      const params = cls[at + 1];
+      if (!params || params.depth !== 1 || params.label !== '(nCores = 2)' || params.description !== '2') {
+        throw new Error(`Cluster's parameterization: ${JSON.stringify(params && { label: params.label, description: params.description })}`);
+      }
+      const insts = cls.slice(at + 2, at + 4).filter((r) => r.depth === 2).map((r) => r.label);
+      if (JSON.stringify(insts) !== '["cluster0","cluster1"]') throw new Error(`Cluster's instances: ${JSON.stringify(insts)}`);
+      // The same command as the Hierarchy row of that instance.
+      const row = cls[at + 3];
+      const hier = v.hierarchy.find((r) => r.depth === 1 && r.label === 'cluster1');
+      if (!row.command || !hier || JSON.stringify(row.command) !== JSON.stringify(hier.command)) {
+        throw new Error(`cluster1's Classes command ${JSON.stringify(row.command)} differs from its Hierarchy one ${JSON.stringify(hier && hier.command)}`);
+      }
+      req = { inst: 'cluster1', cls: 'Cluster' };
+    }
+    await vscode.commands.executeCommand('socle.classes.focus');
+    fs.writeFileSync(path.join(runDir, 'classes-request.json'), JSON.stringify(req));
+    const resultFile = path.join(runDir, 'classes-result.json');
+    const res = await poll(`${resultFile} from webview-click.mjs`, 30000, () =>
+      fs.existsSync(resultFile) && JSON.parse(fs.readFileSync(resultFile, 'utf8')));
+    await vscode.commands.executeCommand('workbench.action.closeSidebar');
+    if (!res.ok) throw new Error(`webview driver failed at stage "${res.stage}": ${res.message}`);
+    log(`      ${res.message}`);
   });
 
   // A click on cluster0 in the Hierarchy view drills the schematic there (checked by the driver in the

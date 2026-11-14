@@ -10,7 +10,10 @@
 // theme (request `theme`: the expected data-theme), takes a screenshot, clicks the box header with
 // a real mouse event on the workbench page, records the UI's `POST open` and writes
 // <runDir>/click-result.json: {ok, stage, message, ...}. index.js then checks the editor moved.
-// Next it opens the bottom panel and marks the window, writes state-ready.json; index.js clicks `inst` in
+// Next it opens the bottom panel and marks the window, writes state-ready.json; index.js opens the
+// Classes view and writes classes-request.json ({inst, cls}), the driver clicks the class row then the
+// instance row in the side panel, checks the UI drilled (breadcrumb) and takes classes.png in
+// classes-result.json (with `inst` null, an older server: the screenshot only); index.js clicks `inst` in
 // the Hierarchy view and writes drill-request.json, the driver checks the UI drilled (breadcrumb) in
 // drill-result.json; index.js views the design again and runs Show design panel, writes
 // state-request.json, and the driver checks all three survived (no iframe reload) in state-result.json.
@@ -42,6 +45,8 @@ const log = (m) => console.log(`[click +${((Date.now() - t0) / 1000).toFixed(1)}
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const stateReadyFile = join(runDir, 'state-ready.json');
+const classesRequestFile = join(runDir, 'classes-request.json');
+const classesResultFile = join(runDir, 'classes-result.json');
 const drillRequestFile = join(runDir, 'drill-request.json');
 const drillResultFile = join(runDir, 'drill-result.json');
 const stateRequestFile = join(runDir, 'state-request.json');
@@ -349,8 +354,51 @@ async function main() {
   await until('the UI with the bottom panel open', 5000, async () => (await state()).bottomPanel);
   writeFileSync(stateReadyFile, '{}');
 
-  stage = 'wait for the drill request';
   const stateOut = out;
+  out = classesResultFile;
+  stage = 'wait for the classes request';
+  const creq = await until(`${classesRequestFile} from index.js`, 5 * 60 * 1000, () =>
+    existsSync(classesRequestFile) && JSON.parse(readFileSync(classesRequestFile, 'utf8')), 250);
+  // A row of the Classes view in the workbench, by its label: its centre, or null.
+  const classRow = (label) => evaluate(wbConn, `(() => {
+    const pane = [...document.querySelectorAll('.pane')].find((p) => {
+      const t = p.querySelector('.pane-header .title');
+      return t && t.textContent.trim().toLowerCase() === 'classes';
+    });
+    const row = pane && [...pane.querySelectorAll('.monaco-list-row')].find((r) => {
+      const l = r.querySelector('.label-name');
+      return l && l.textContent.trim() === ${JSON.stringify(label)};
+    });
+    if (!row) return null;
+    const b = row.getBoundingClientRect();
+    return b.height > 0 ? { x: b.left + b.width / 2, y: b.top + b.height / 2 } : null;
+  })()`);
+  const clickAt = async (p) => {
+    for (const type of ['mouseMoved', 'mousePressed', 'mouseReleased']) {
+      await wbConn.send('Input.dispatchMouseEvent', { type, x: p.x, y: p.y, button: 'left', clickCount: 1 });
+    }
+  };
+  let classesMessage = 'no class view: screenshot only';
+  if (creq.inst) {
+    stage = 'click the class row in the Classes view';
+    await clickAt(await until(`the ${creq.cls} row in the Classes view`, 15000, () => classRow(creq.cls)));
+    stage = 'click the instance row in the Classes view';
+    await clickAt(await until(`the ${creq.inst} row under ${creq.cls}`, 15000, () => classRow(creq.inst)));
+    stage = 'UI drills on the Classes click';
+    await until(`the breadcrumb to end in ${creq.inst}`, 15000, async () => (await crumb()) === creq.inst).catch(async (e) => {
+      result.crumb = await crumb().catch(String);
+      throw e;
+    });
+    classesMessage = `the schematic drilled into ${creq.inst} (breadcrumb) on a click in the Classes view`;
+  }
+  stage = 'screenshot of the Classes view';
+  await sleep(500);
+  const cshot = await wbConn.send('Page.captureScreenshot', { format: 'png' });
+  writeFileSync(join(runDir, 'classes.png'), Buffer.from(cshot.data, 'base64'));
+  finish({ ok: true, message: classesMessage, screenshot: join(runDir, 'classes.png') });
+
+  result = { ok: false };
+  stage = 'wait for the drill request';
   out = drillResultFile;
   await until(`${drillRequestFile} from index.js`, 5 * 60 * 1000, () => existsSync(drillRequestFile), 250);
   stage = 'UI drills on the Hierarchy click';

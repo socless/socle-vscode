@@ -172,9 +172,16 @@
       "socle": [
         { "id": "socle.tests", "name": "Tests" },
         { "id": "socle.hierarchy", "name": "Hierarchy" },
+        { "id": "socle.classes", "name": "Classes" },
         { "id": "socle.details", "name": "Details" }
       ]
     },
+    "viewsWelcome": [
+      {
+        "view": "socle.classes",
+        "contents": "Classes appear here for a design opened from a test (View design)."
+      }
+    ],
     "commands": [
       {
         "command": "socle.showPanel",
