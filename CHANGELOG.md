@@ -14,6 +14,8 @@ with Socle itself (see the [Socle changelog](https://github.com/socless/socle/bl
   read is counted in the design's warnings instead of being dropped, View design warns when the
   test uses a Chisel other than the tested 7.16, and selecting or hovering `io.a` or `core1` no
   longer lights `io.ab` or `core10`.
+- The bundled server, from Socle 0.29.0: the Details view gives every module constructor argument
+  its value (`nCores = 2`), not only those of `val` parameters (the others read `<unreadable>`).
 
 ## [0.29.0] - 2026-11-11
 
