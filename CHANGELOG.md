@@ -8,6 +8,13 @@ with Socle itself (see the [Socle changelog](https://github.com/socless/socle/bl
 
 ## [Unreleased]
 
+### Changed
+
+- The bundled server, from Socle 0.28.0: a CHIRRTL statement the parser does not know or cannot
+  read is counted in the design's warnings instead of being dropped, View design warns when the
+  test uses a Chisel other than the tested 7.16, and selecting or hovering `io.a` or `core1` no
+  longer lights `io.ab` or `core10`.
+
 ## [0.29.0] - 2026-11-11
 
 Bundles the language server of Socle 0.27.0.
