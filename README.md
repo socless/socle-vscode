@@ -5,8 +5,7 @@ design in a panel beside the editor, and the schematic follows your cursor. The 
 (activity bar) lists the workspace's tests (View design and Simulate on each), the design's instance
 hierarchy, its classes and the details of the selection. The Classes view groups the modules by
 Scala class, then by the constructor arguments they were built with (same arguments, one row), then
-lists their instances: a click shows the instance in the schematic. It needs the language server of
-Socle 0.30.0 or later.
+lists their instances: a click shows the instance in the schematic.
 
 <p align="center">
 <picture>

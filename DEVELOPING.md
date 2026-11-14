@@ -29,6 +29,8 @@ To bump the server:
 
 To try a server that is not released yet, point `SOCLE_LSP_JAR` at a local jar (for example
 `out/socle-lsp/assembly.dest/out.jar` of a Socle checkout) before `./mill stage` or `./mill vsix`.
+The Mill daemon reads it, not the shell that runs `./mill`: use `./mill --no-daemon stage` (or
+`./mill shutdown` first), then check the sha256 of `out/stage.dest/server/socle-lsp.jar`.
 
 The extension talks to the server through LSP and the `socle/*` methods listed in Socle's
 `docs/lsp-protocol.md`.
@@ -41,7 +43,7 @@ tab. Its workspace is a Socle checkout. Use a scratch clone at the pinned tag, n
 because the language server runs Mill there.
 
 ```bash
-git clone --branch v0.29.0 git@github.com:socless/socle.git /tmp/socle
+git clone --branch v0.30.0 git@github.com:socless/socle.git /tmp/socle
 ./mill stage
 SOCLE_ROOT=/tmp/socle e2e/run.sh out/stage.dest
 ```

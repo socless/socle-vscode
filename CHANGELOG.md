@@ -13,8 +13,8 @@ with Socle itself (see the [Socle changelog](https://github.com/socless/socle/bl
 - The Classes view, after Hierarchy: the design's modules by Scala class (user classes first,
   then library classes), then by parameterization (the modules built with the same arguments,
   `?` when some value could not be read), then their instances; a click on an instance shows it
-  in the schematic, as a Hierarchy click does. Needs the language server of Socle 0.30.0 or
-  later (an older one sends no class view: the view says how to get one).
+  in the schematic, as a Hierarchy click does. It comes from the bundled server, Socle 0.30.0
+  (with a `socle.serverJar` older than that, the view stays empty).
 
 ## [0.30.0] - 2026-11-14
 
