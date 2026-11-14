@@ -8,6 +8,10 @@ with Socle itself (see the [Socle changelog](https://github.com/socless/socle/bl
 
 ## [Unreleased]
 
+## [0.30.0] - 2026-11-14
+
+Bundles the language server of Socle 0.29.0.
+
 ### Changed
 
 - The bundled server, from Socle 0.28.0: a CHIRRTL statement the parser does not know or cannot
